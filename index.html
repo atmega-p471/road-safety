@@ -55,64 +55,12 @@
     <!-- ЛЕВАЯ КОЛОНКА (6 из 12) -->
     <div class="lg:col-span-6 space-y-5">
 
-      <!-- Параметры задачи управления -->
-      <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 space-y-4">
-        <div class="border-b border-slate-200/70 pb-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Параметры оптимизационной задачи управления</span>
-            <span class="text-[11px] font-mono bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-semibold">Формулы (1)–(3)</span>
-          </div>
-          <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-            Формализация критерия качества управления <span class="font-mono font-semibold">Z(p(t)) → min</span> и нормативных коридоров допустимости из Раздела 2 статьи.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
-          <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-200 space-y-1.5 flex flex-col justify-between">
-            <div>
-              <label class="block font-bold text-slate-800 text-xs">План p(t) ∈ P:</label>
-              <div class="text-[10px] text-slate-500 mb-1">Вектор управления</div>
-              <select id="activePlanSelect" onchange="selectPlanPreset(this.value)" class="w-full p-2 border border-slate-300 rounded-lg bg-white font-bold text-xs text-blue-700 shadow-2xs">
-                <option value="p1">p₁ · опт. · 1.6031</option>
-                <option value="p2">p₂ · наруш. · 1.6764</option>
-                <option value="p3">p₃ · альт. · 1.8573</option>
-              </select>
-            </div>
-            <p class="text-[10px] text-slate-600 leading-tight bg-white p-2 rounded border border-slate-200/70">
-              Три альтернативы из Раздела 4 статьи (Рис. 13). Значения Z(p) пересчитываются по (1).
-            </p>
-          </div>
-
-          <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-200 space-y-1.5 flex flex-col justify-between">
-            <div>
-              <label class="block font-bold text-slate-800 text-xs">Целевой норматив X*:</label>
-              <div class="text-[10px] text-slate-500 mb-1">Рекомендованное значение</div>
-              <input type="number" id="xStar" value="0.50" min="0.1" max="0.9" step="0.05" oninput="runAllCalculations()" class="w-full p-2 border border-slate-300 rounded-lg bg-white font-bold text-center text-sm text-emerald-700 shadow-2xs">
-            </div>
-            <p class="text-[10px] text-slate-600 leading-tight bg-white p-2 rounded border border-slate-200/70">
-              Норматив для всех Xᵢ (0.50 — двукратное снижение аварийности).
-            </p>
-          </div>
-
-          <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-200 space-y-1.5 flex flex-col justify-between">
-            <div>
-              <label class="block font-bold text-slate-800 text-xs">Коэффициент Xᵢⁿᵒʳᵐ:</label>
-              <div class="text-[10px] text-slate-500 mb-1">Нормировка скорости в (5)</div>
-              <input type="number" id="normCoef" value="19.55" min="5" max="200" step="0.05" oninput="runAllCalculations()" class="w-full p-2 border border-slate-300 rounded-lg bg-white font-bold text-center text-sm text-indigo-700 shadow-2xs">
-            </div>
-            <p class="text-[10px] text-slate-600 leading-tight bg-white p-2 rounded border border-slate-200/70">
-              1/X<sup>norm</sup> в уравнении (5). 19.55 — калибровка под Z(p₁) = 1.6031 статьи.
-            </p>
-          </div>
-        </div>
-      </div>
-
       <!-- Ввод функций f1..f76 и факторов E1..E6 -->
       <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/70 pb-3">
           <div>
             <div class="text-xs font-bold uppercase tracking-wider text-slate-700">Кубические функции f₁ … f₇₆ и факторы E₁ … E₆</div>
-            <p class="text-[11px] text-slate-500 mt-0.5">Прямой ввод коэффициентов в квадратные поля</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Прямой ввод коэффициентов в квадратные поля. Базовый сценарий: p₁, X* = 0.50, Xᵢⁿᵒʳᵐ = 19.05.</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <select onchange="setEqFilter(this.value)" class="p-1.5 text-xs border border-slate-300 rounded-lg bg-slate-50 font-semibold text-slate-700">
@@ -131,12 +79,12 @@
               <option value="12">Уравнение dX₁₂/dt (f₆₅–f₆₈)</option>
               <option value="13">Уравнение dX₁₃/dt (f₆₉–f₇₆)</option>
             </select>
-            <button onclick="fillRandomCoeffs()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Случайно</button>
+            <button onclick="fillRandomCoeffs()" title="Случайный разброс ±4% вокруг калиброванных коэффициентов" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Случайно</button>
             <button onclick="resetDefaultCoeffs()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-300">Сброс</button>
           </div>
         </div>
 
-        <div id="allFormulasInlineContainer" class="space-y-2.5 max-h-[560px] overflow-y-auto pr-1 custom-scroll"></div>
+        <div id="allFormulasInlineContainer" class="space-y-2.5 max-h-[720px] overflow-y-auto pr-1 custom-scroll"></div>
       </div>
 
     </div>
@@ -169,11 +117,11 @@
           <div id="tab_dynamics" class="tab-content space-y-4">
 
             <!-- Таблица начальных условий по Таблице 4 статьи -->
-            <div class="bg-slate-50 rounded-xl border border-slate-200 p-3.5 space-y-2">
-              <p class="text-[11px] text-slate-600 leading-snug">
-                Стартовые точки интегрирования системы (Таблица 4 статьи). На графике ниже каждая линия начинается ровно с этих значений при t = 0:
-              </p>
-              <div class="overflow-x-auto custom-scroll pt-1">
+            <details class="bg-slate-50 rounded-xl border border-slate-200 p-3">
+              <summary class="cursor-pointer text-[11px] text-slate-600 font-semibold select-none">
+                Начальные условия интегрирования (таблица 4 статьи) — 13 значений
+              </summary>
+              <div class="overflow-x-auto custom-scroll pt-2">
                 <table class="w-full text-center text-[11px] font-mono border-collapse bg-white rounded-lg border border-slate-200">
                   <thead>
                     <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold">
@@ -211,46 +159,38 @@
                   </tbody>
                 </table>
               </div>
-            </div>
+            </details>
 
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide mr-1">Группа:</span>
-                <button onclick="setDynamicsCategory('key')" data-cat="key" class="cat-filter-btn px-2.5 py-1.5 text-xs font-semibold rounded-lg border bg-white text-slate-700 border-slate-200 hover:bg-slate-50">
-                  Ключевые (X₁–X₄)
-                </button>
-                <button onclick="setDynamicsCategory('human')" data-cat="human" class="cat-filter-btn px-2.5 py-1.5 text-xs font-semibold rounded-lg border bg-white text-slate-700 border-slate-200 hover:bg-slate-50">
-                  Человеческий фактор (X₇–X₁₀)
-                </button>
-                <button onclick="setDynamicsCategory('infra')" data-cat="infra" class="cat-filter-btn px-2.5 py-1.5 text-xs font-semibold rounded-lg border bg-white text-slate-700 border-slate-200 hover:bg-slate-50">
-                  Инфраструктура (X₁₁–X₁₃)
-                </button>
-                <button onclick="setDynamicsCategory('rates')" data-cat="rates" class="cat-filter-btn px-2.5 py-1.5 text-xs font-semibold rounded-lg border bg-white text-slate-700 border-slate-200 hover:bg-slate-50">
-                  Удельные (X₄–X₆)
-                </button>
-                <button onclick="setDynamicsCategory('all')" data-cat="all" class="cat-filter-btn px-2.5 py-1.5 text-xs font-semibold rounded-lg border bg-blue-600 text-white border-blue-600 shadow-xs">
-                  Все 13
-                </button>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Показать на графике:</span>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <button onclick="setAllIndicators(true)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">Все</button>
+                  <button onclick="setAllIndicators(false)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">Ничего</button>
+                  <button onclick="toggleYZoom()" id="btnYZoom" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-blue-50 text-blue-700 transition">
+                    Авто-зум Y: вкл
+                  </button>
+                </div>
               </div>
-
-              <button onclick="toggleYZoom()" id="btnYZoom" class="text-xs text-blue-700 font-semibold bg-white hover:bg-blue-50 px-3 py-1.5 rounded-lg border border-slate-200 transition shrink-0">
-                Авто-зум Y: выкл
-              </button>
+              <div id="indicatorsChipsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-1"></div>
+              <p class="text-[10px] text-slate-500 leading-snug">
+                Выберите один или несколько показателей — ось Y сузится, и изгиб будет видно лучше.
+              </p>
             </div>
 
             <div class="chart-wrapper-lg bg-white rounded-xl border border-slate-100 p-2">
               <canvas id="dynamicsChart"></canvas>
             </div>
 
-            <p class="text-[11px] text-slate-500 leading-snug">
-              Рис. 8. Ось абсцисс — машинное время t ∈ [0; 1] с шагом h = 0.125 (9 узлов, Рунге–Кутта 4-го порядка).
-              Подписи справа — X₁ … X₁₃ в конце горизонта. Допустимая область Xᵢ ∈ [0.25; 1.00] контролируется в блоке «Статус ограничений».
-            </p>
-
-            <div class="space-y-1.5 pt-1">
-              <div class="text-[11px] font-medium text-slate-400">Нажмите на бейдж показателя, чтобы скрыть или показать его на графике:</div>
-              <div id="indicatorsChipsContainer" class="flex flex-wrap gap-1.5 items-center"></div>
+            <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900">
+              <b>Зелёная полоса</b> — допустимый коридор (3): Xᵢ ∈ [0.25; 1.00].
             </div>
+
+            <p class="text-[11px] text-slate-500 leading-snug">
+              Рис. 8. Безразмерное время t ∈ [0; 1], горизонт 11 месяцев, шаг h = 0.125, RK4.
+              Кривые построены по 129 точкам. Допустимая область Xᵢ ∈ [0.25; 1.00] контролируется
+              в блоке «Статус ограничений».
+            </p>
 
           </div>
 
@@ -265,72 +205,84 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="p-4 bg-slate-50 rounded-xl border">
                 <h4 id="radarTitle1" class="text-xs font-bold text-center text-slate-600 mb-2">Рис. 11 — срез t₁ = 0.000</h4>
-                <div class="chart-wrapper-sm"><canvas id="radarChart1"></canvas></div>
+                <div class="chart-wrapper-sm chart-wrapper-radar"><canvas id="radarChart1"></canvas></div>
               </div>
               <div class="p-4 bg-slate-50 rounded-xl border">
                 <h4 id="radarTitle2" class="text-xs font-bold text-center text-slate-600 mb-2">Рис. 12 — срез t₂ = 1.000</h4>
-                <div class="chart-wrapper-sm"><canvas id="radarChart2"></canvas></div>
+                <div class="chart-wrapper-sm chart-wrapper-radar"><canvas id="radarChart2"></canvas></div>
               </div>
             </div>
+            <div id="radarTableWrap" class="overflow-x-auto custom-scroll"></div>
+            <p class="text-[11px] text-slate-500 leading-snug">
+              Радар соединяет 13 дискретных значений показателей прямыми отрезками — это диаграмма, а не траектория.
+              Изменение решения во времени показано на вкладке «1. Прогноз»; здесь важен уровень каждого Xᵢ относительно
+              цели X* и границ коридора. <b>Красное кольцо</b> вокруг точки — значение вышло за [0.25; 1.00];
+              жёлтая пунктирная окружность — цель X*; красная — верхняя граница 1.00. Если модель пытается уйти
+              ниже нуля, значение ограничивается нулём: отрицательных показателей не существует.
+            </p>
           </div>
 
           <!-- Вкладка 3: Регрессии -->
           <div id="tab_regressions" class="tab-content hidden space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Выберите функцию f(X):</label>
-                <select id="regSelect" onchange="updateRegressionChart()" class="p-2 text-xs border border-slate-300 rounded-lg bg-slate-50 font-medium w-full">
-                  <option value="f1_7">f₁,₇(X₇): ДТП от нарушений ПДД</option>
-                  <option value="f1_8">f₁,₈(X₈): ДТП от нетрезвых (Рис. 6)</option>
-                  <option value="f1_9">f₁,₉(X₉): ДТП по вине пешеходов (Рис. 7)</option>
-                  <option value="f2_4">f₂,₄(X₄): Погибшие от тяжести</option>
-                </select>
-              </div>
-              <div class="grid grid-cols-3 gap-2">
-                <div>
-                  <label class="block text-[10px] text-slate-500 mb-0.5">c₀:</label>
-                  <input type="number" id="reg_c0" value="5.66" step="0.01" oninput="updateRegCoeffs()" class="w-full p-1.5 border rounded text-center text-xs font-bold bg-white">
-                </div>
-                <div>
-                  <label class="block text-[10px] text-slate-500 mb-0.5">c₁:</label>
-                  <input type="number" id="reg_c1" value="-11.34" step="0.01" oninput="updateRegCoeffs()" class="w-full p-1.5 border rounded text-center text-xs font-bold bg-white">
-                </div>
-                <div>
-                  <label class="block text-[10px] text-slate-500 mb-0.5">c₂:</label>
-                  <input type="number" id="reg_c2" value="6.7" step="0.01" oninput="updateRegCoeffs()" class="w-full p-1.5 border rounded text-center text-xs font-bold bg-white">
-                </div>
-              </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Выберите функцию f(X):</label>
+              <select id="regSelect" onchange="updateRegressionChart()" class="p-2 text-xs border border-slate-300 rounded-lg bg-slate-50 font-medium w-full">
+                <option value="f1_7">f₁(X₇): вклад нарушений ПДД в dX₁/dt</option>
+                <option value="f1_8">f₂(X₈): вклад нетрезвых водителей в dX₁/dt</option>
+                <option value="f1_9">f₃(X₉): вклад пешеходов в dX₁/dt</option>
+                <option value="f2_4">f₇(X₄): вклад тяжести последствий в dX₂/dt</option>
+              </select>
             </div>
-            <div id="regEquationBox" class="py-2.5 px-4 bg-blue-50 border border-blue-200 rounded-xl text-center text-xs font-mono text-blue-950 shadow-xs">
-              $$f_{1,7}(X_7) = 6.7\,X_7^2 - 11.34\,X_7 + 5.66$$
-            </div>
+
+            <!-- Редактор коэффициентов прямо в уравнении, как в блоке функций слева -->
+            <div id="regEquationEditor"></div>
+
             <div class="chart-wrapper-md"><canvas id="regressionChart"></canvas></div>
+            <p class="text-[11px] text-slate-500 leading-snug">
+              Коэффициенты вводятся прямо в уравнение — в окна рядом с X³, X², X и свободным членом,
+              так же как в блоке функций слева. Кривая — точный кубический полином f(X) без «натяжения» сплайна,
+              поэтому её изгиб и положение экстремума видны. Маркер ◆ — экстремум в рабочем диапазоне X ∈ [0.5; 1.0].
+            </p>
           </div>
 
           <!-- Вкладка 4: Коррекция -->
           <div id="tab_correction" class="tab-content hidden space-y-4">
-            <div class="text-xs text-slate-600">Верификация расчетных данных со статистикой ГИБДД МВД (Раздел 4.1). Порог коррекции: <span id="val_corrThreshold" class="font-bold text-blue-600">10</span>%</div>
+            <div class="text-xs text-slate-600">Верификация расчётных данных со статистикой ГИБДД МВД (Раздел 4.1). Порог коррекции: <span id="val_corrThreshold" class="font-bold text-blue-600">10</span>%</div>
             <input type="range" id="corrThreshold" value="10" min="2" max="25" step="1" oninput="document.getElementById('val_corrThreshold').textContent=this.value; updateCorrectionCharts();" class="w-full custom-slider">
             <div class="p-4 bg-slate-50 rounded-xl border">
-              <h4 class="text-xs font-bold text-slate-600 mb-2">Рис. 10 — Коррекция переменной X₄</h4>
-              <div class="chart-wrapper-sm"><canvas id="correctionChartX4"></canvas></div>
+              <h4 class="text-xs font-bold text-slate-600 mb-2">Рис. 10 — Коррекция переменной X₄ (демонстрационный ряд 2015–2021)</h4>
+              <div class="chart-wrapper-sm chart-wrapper-correction"><canvas id="correctionChartX4"></canvas></div>
               <div id="corrLogBox" class="mt-3 text-xs text-slate-600"></div>
             </div>
+            <p class="text-[11px] text-slate-500 leading-snug">
+              В статье для X₄ используется ряд 2004–2020 гг., а для X₈/X₁₂ — 2015–2021 гг. (рис. 9–10).
+              Здесь показан демонстрационный ряд 2015–2021: важна логика порога, а не абсолютные значения.
+              Голубая полоса — допустимое отклонение ±порог вокруг статистики; красные точки — годы, где модель
+              вышла за порог и была заменена статистикой.
+            </p>
           </div>
 
           <!-- Вкладка 5: Планы -->
           <div id="tab_plans" class="tab-content hidden space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-              <div class="p-4 bg-slate-50 rounded-xl border"><div class="chart-wrapper-sm"><canvas id="plansBarChart"></canvas></div></div>
+              <div class="p-4 bg-slate-50 rounded-xl border"><div class="chart-wrapper-sm chart-wrapper-plans"><canvas id="plansBarChart"></canvas></div></div>
               <div class="space-y-3 text-xs">
-                <div id="planCard1" class="p-3.5 rounded-xl border bg-emerald-50 border-emerald-300 font-bold text-emerald-900 shadow-xs">План p₁ (Оптимальный P₁⁰): Z = —</div>
-                <div id="planCard2" class="p-3.5 rounded-xl border bg-rose-50 border-rose-200 text-rose-900 shadow-xs">План p₂ (Нарушение X₇) — Z = —</div>
-                <div id="planCard3" class="p-3.5 rounded-xl border bg-slate-50 text-slate-700 shadow-xs">План p₃ (Альтернативный): Z = —</div>
+                <div id="planCard1" onclick="selectPlanPreset('p1')" title="Показать p₁ на графиках" class="cursor-pointer p-3.5 rounded-xl border bg-emerald-50 border-emerald-300 font-bold text-emerald-900 shadow-xs">План p₁ (Оптимальный P₁⁰): Z = —</div>
+                <div id="planCard2" onclick="selectPlanPreset('p2')" title="Показать p₂ на графиках" class="cursor-pointer p-3.5 rounded-xl border bg-rose-50 border-rose-200 text-rose-900 shadow-xs">План p₂ (Нарушение X₇) — Z = —</div>
+                <div id="planCard3" onclick="selectPlanPreset('p3')" title="Показать p₃ на графиках" class="cursor-pointer p-3.5 rounded-xl border bg-slate-50 text-slate-700 shadow-xs">План p₃ (Альтернативный): Z = —</div>
                 <p class="text-[11px] text-slate-500 leading-snug">
-                  Справочно по статье: Z(p₁) = 1.6031, Z(p₃) = 1.8573. Значения выше пересчитываются по формуле (1)
-                  на текущих коэффициентах модели.
+                  Нажмите на карточку плана, чтобы открыть его на вкладках «Прогноз» и «Радар».
+                  Справочно по статье: Z(p₁) = 1.6031, Z(p₃) = 1.8573. Δ — отклонение от статьи
+                  (положительное = хуже).
                 </p>
               </div>
+            </div>
+            <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-[11px] leading-relaxed text-blue-950">
+              <b>Почему p₂ исключается:</b> у p₂ усилен положительный драйвер X₇ и ослаблена отрицательная
+              обратная связь, поэтому X₇ выходит за 1.00 и нарушает (3). Планы p₁ и p₃ остаются в коридоре;
+              сравниваются по Z — меньшему значению соответствует лучший план. В статье оптимум p₁ (Z = 1.6031).
+              Конкретные уравнения для p₂/p₃ в статье не приведены, поэтому это демонстрационные сценарии,
+              откалиброванные по Z(p₁) и Z(p₃).
             </div>
           </div>
 
@@ -340,14 +292,20 @@
       <!-- Итоги расчета и KPI -->
       <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 space-y-4">
         <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Итоги расчета и критерий Z(p)</div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
             <div class="text-xs text-slate-500 font-medium">Функционал потерь Z(p)</div>
             <div id="kpiZActive" class="text-2xl font-bold text-blue-600 mt-1">—</div>
             <div id="kpiZRef" class="text-[11px] text-slate-400 mt-1">Статья: Z(p₁) = 1.6031</div>
+            <div id="kpiZDelta" class="text-[11px] font-semibold mt-1"></div>
           </div>
           <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <div class="text-xs text-slate-500 font-medium">Статус ограничений</div>
+            <div class="text-xs text-slate-500 font-medium">Близость к цели X*</div>
+            <div id="kpiTargetGap" class="text-xl font-bold text-amber-600 mt-1">—</div>
+            <div id="kpiTargetDetail" class="text-[11px] text-slate-500 mt-1"></div>
+          </div>
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="text-xs text-slate-500 font-medium">Статус ограничения (3)</div>
             <div id="kpiBoundsStatus" class="text-sm font-bold text-emerald-600 mt-2">—</div>
             <div id="kpiBoundsDetail" class="text-[11px] text-slate-500 mt-1"></div>
           </div>
@@ -374,32 +332,62 @@
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
           <div class="font-bold text-slate-800 mb-1">Целевая функция (1)</div>
           $$Z(p(t))=\int\limits_{t_0}^{t_N}\sum_{i=1}^{n}\bigl(X_i^{*}-X_i(t,p(t))\bigr)^2\gamma_i\,dt\to\min$$
-          <p class="text-[11px] text-slate-500 mt-1">γᵢ = 1/15; Xᵢ* — рекомендованное значение (в расчетах X* = 0.5 для всех показателей, X₁₄ = X₁₅ = 1).</p>
+          <p class="text-[11px] text-slate-500 mt-1">γᵢ = 1/15; Xᵢ* — рекомендованное значение (в расчетах X* = 0.5 для всех показателей, X₁₄ = X₁₅ = 1). В сумму входят 13 моделируемых показателей и два постоянных слагаемых (1 − X*)² для X₁₄, X₁₅.</p>
         </div>
 
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
           <div class="font-bold text-slate-800 mb-1">Система дифференциальных уравнений (2), (5), (6)</div>
           $$\frac{dX_i}{dt}=f_i\bigl(t,X_1,\dots,X_n,p(t)\bigr),\qquad X_i(t_0)=X_{i0}$$
           $$\frac{dX_i}{dt}=\frac{1}{X_i^{norm}}\Biggl(\prod_{j\in I_i^{+}}f_{i,j}(X_j)\sum_{m\in M_i^{+}}E_m-\prod_{k\in I_i^{-}}f_{i,k}(X_k)\sum_{n\in N_i^{-}}E_n\Biggr)$$
-          <p class="text-[11px] text-slate-500 mt-1">Xᵢ<sup>norm</sup> — коэффициент нормировки (в калькуляторе — поле «Коэффициент Xᵢⁿᵒʳᵐ»).</p>
+          <p class="text-[11px] text-slate-500 mt-1">Xᵢ<sup>norm</sup> — коэффициент нормировки (в калькуляторе — поле «Коэффициент Xᵢⁿᵒʳᵐ»). Если для группы связей не задан ни один внешний фактор, множитель суммы равен 1 (нейтральный), а не 0 — иначе отрицательная обратная связь X₉ полностью исчезала.</p>
         </div>
 
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
           <div class="font-bold text-slate-800 mb-1">Ограничения (3) и нормировка (8)</div>
           $$X_i^{\min}\le X_i(t,p(t))\le X_i^{\max},\qquad X_i^{*}(t)=\frac{X_i(t)}{X_i^{norm}}$$
-          <p class="text-[11px] text-slate-500 mt-1">В калькуляторе Xᵢ ∈ [0.25; 1.00]; выход за границы подсвечивается в блоке «Статус ограничений».</p>
+          <p class="text-[11px] text-slate-500 mt-1">В калькуляторе Xᵢ ∈ [0.25; 1.00]. Ограничение проверяется <b>после</b> интегрирования; внутри RK4 значения не «прибиваются» к границам, иначе решение искажается, а нарушение (3) маскируется.</p>
         </div>
 
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
           <div class="font-bold text-slate-800 mb-1">Численная схема</div>
-          <p>Метод Рунге–Кутты 4-го порядка, машинное время t ∈ [0; 1], шаг h = 0.125 (9 узлов). Решение аппроксимируется квадратичными полиномами, которые подставляются в (1).</p>
-          <p class="mt-1 text-[11px] text-slate-500">Интеграл (1) берется на интервале статьи (11 месяцев), а машинное время t ∈ [0; 1] — его нормированная шкала; поэтому Z = (1/15) · 11 · ∫₀¹ Σ (Xᵢ* − Xᵢ)² dt.</p>
+          <p>Метод Рунге–Кутты 4-го порядка, безразмерное машинное время t ∈ [0; 1], шаг h = 0.125 (9 узлов). Для графиков решение сгущается кубической интерполяцией Эрмита (129 точек), чтобы был виден изгиб, а не ломаная. Для Z решение аппроксимируется квадратичными полиномами, которые подставляются в (1).</p>
+          <p class="mt-1 text-[11px] text-slate-500">Горизонт статьи — 11 месяцев; t ∈ [0; 1] — его нормированная шкала, поэтому Z = (1/15) · 11 · ∫₀¹ Σ (Xᵢ* − Xᵢ)² dt. Коэффициент 11 — длина горизонта, а не число точек.</p>
+        </div>
+
+        <div class="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-950">
+          <b>X* и допустимая область — разные вещи.</b> X* = 0.50 — цель; [0.25; 1.00] — коридор ограничения (3).
+          Поэтому значение 0.8 «выше нормы» (цели), но всё ещё допустимо. Статус «в допустимой области» не означает
+          «достигнут норматив»; за отклонение от X* начисляется штраф Z. Нарушением считается только выход за
+          границы коридора.
         </div>
 
         <div class="p-3.5 bg-blue-50 rounded-xl border border-blue-200 text-[11px] text-slate-600">
-          <b>Модельные планы.</b> p₁ — базовый набор мероприятий; p₂ — вариант с неконтролируемым ростом X₇
-          (проверка ограничения (3)); p₃ — альтернативный план с пониженной (≈46%) интенсивностью мероприятий.
-          Значения Z(p) пересчитываются по (1) при каждом изменении коэффициентов.
+          <b>Модельные планы.</b> p₁ — базовый набор мероприятий; p₂ — вариант с усиленным положительным драйвером
+          и ослабленной отрицательной обратной связью по X₇ (проверка ограничения (3)); p₃ — альтернативный план
+          с пониженной (≈46%) интенсивностью мероприятий. Значения Z(p) пересчитываются по (1) при каждом изменении
+          коэффициентов; калибровка по статье: Z(p₁) = 1.6031, Z(p₃) = 1.8573.
+        </div>
+
+        <div class="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-950">
+          <div class="font-bold text-xs mb-1">Что исправлено в расчётах и графиках</div>
+          <ul class="list-disc pl-4 space-y-0.5">
+            <li>Убран принудительный clamp внутри RK4: ограничение (3) проверяется после интегрирования, поэтому X₉ больше не «прилипает» к 1.00 и нарушения не маскируются. При этом введён физический предел Xᵢ ≥ 0: отрицательных значений показателей не бывает.</li>
+            <li>Пустая сумма внешних факторов заменена на нейтральный множитель 1: восстановлена отрицательная обратная связь X₉ → X₂/X₃, которая раньше обнулялась.</li>
+            <li>План p₂ больше не сдвигает темп постоянным слагаемым (это могло менять знак производной); усиление/ослабление применяется к положительному и отрицательному членам.</li>
+            <li>После исправлений заново откалиброваны Xᵢⁿᵒʳᵐ = 19.05 и интенсивность p₃ = 0.464: Z(p₁) = 1.6031, Z(p₃) = 1.8573.</li>
+            <li>Графики строятся по 129 точкам (интерполяция Эрмита), а не по 9 узлам; видны изгибы. На динамике показан коридор (3), на радаре — цель X*, границы и таблица отклонений.</li>
+            <li>Статус «в допустимой области» отделён от близости к цели X*: это разные критерии, именно поэтому значения выше X* не являются ошибкой.</li>
+          </ul>
+        </div>
+
+        <div class="p-3.5 bg-rose-50 rounded-xl border border-rose-200 text-[11px] text-rose-950">
+          <div class="font-bold text-xs mb-1">Расхождения в самой статье (учтены при сверке)</div>
+          <ul class="list-disc pl-4 space-y-0.5">
+            <li>В тексте статьи указан горизонт 14 месяцев, а в формуле для Z пределы интегрирования 1…12, то есть 11 месяцев. Калькулятор использует 11.</li>
+            <li>Свободные члены опубликованных полиномов не совпадают с табл. 4: например, для X₁ 0.7135 вместо 0.89, для X₃ 1.0198 вместо 0.86, для X₁₃ 1.0217 вместо 0.62. Поэтому Z нельзя точно воспроизвести, просто подставив табл. 4; требуется калибровка.</li>
+            <li>В п. 3.4 сказано, что решением является план с <i>наибольшим</i> значением Z, хотя (1) минимизируется. Калькулятор выбирает план с <i>наименьшим</i> Z.</li>
+            <li>В табл. 1 — 17 показателей, в тексте — 15; X₁₄ и X₁₅ в модели не интегрируются, а входят постоянными слагаемыми (1 − X*)².</li>
+          </ul>
         </div>
       </div>
     </div>
