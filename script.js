@@ -646,6 +646,7 @@ function resetDefaultCoeffs() {
   E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
   renderAllFormulasInline();
   renderRegressionEditor(true);
+  renderTargetsEditor();
   runAllCalculations();
 }
 
@@ -864,6 +865,7 @@ function resetDefaults() {
   E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
   renderAllFormulasInline();
   renderRegressionEditor(true);
+  renderTargetsEditor();
   runAllCalculations();
 }
 
@@ -1882,35 +1884,31 @@ function exportCSV() {
 }
 
 function renderTargetsEditor() {
-  const body = document.getElementById('targetsTableBody');
-  if (!body) return;
+  const grid = document.getElementById('targetsGrid');
+  if (!grid) return;
 
-  body.innerHTML = X_VARS.map((v, i) => `
-    <tr class="border-b border-slate-100 last:border-0">
-      <td class="p-2 text-left font-semibold text-slate-700">${v.sub} <span class="font-normal text-slate-500">${v.name}</span></td>
-      <td class="p-2">
-        <input type="number" id="tgt_${i}" value="${currentTargets[i].toFixed(2)}" min="0.05" max="0.95" step="0.05"
-          class="w-20 h-7 px-1 text-center font-bold text-blue-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
-      </td>
-      <td class="p-2">
-        <input type="number" id="wgt_${i}" value="${currentWeights[i]}" min="0.1" max="10" step="0.5"
-          class="w-20 h-7 px-1 text-center font-bold text-indigo-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
-      </td>
-    </tr>`).join('');
-}
+  grid.innerHTML = X_VARS.map((v, i) => `
+    <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-1.5 py-1">
+      <span class="font-bold text-[10px] text-slate-700 w-6 shrink-0">${v.sub}</span>
+      <input type="number" id="tgt_${i}" value="${currentTargets[i].toFixed(2)}" min="0.05" max="0.95" step="0.05"
+        title="Цель X*${i + 1}"
+        class="w-12 h-6 px-1 text-center font-bold text-[10px] text-blue-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
+      <input type="number" id="wgt_${i}" value="${currentWeights[i]}" min="0.1" max="10" step="0.5"
+        title="Вес важности w${i + 1}"
+        class="w-9 h-6 px-1 text-center font-bold text-[10px] text-indigo-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
+    </div>`).join('');
 
-function openTargetsModal() {
-  renderTargetsEditor();
   const g = document.getElementById('globalTarget');
   if (g) {
     const avg = currentTargets.reduce((a, b) => a + b, 0) / currentTargets.length;
     g.value = avg.toFixed(2);
   }
-  document.getElementById('targetsModal')?.classList.remove('hidden');
 }
 
-function closeTargetsModal() {
-  document.getElementById('targetsModal')?.classList.add('hidden');
+function showTargetsPanel() {
+  switchTab('tab_dynamics');
+  const panel = document.getElementById('targetsPanel');
+  if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function setAllTargetInputs(value) {
@@ -1946,7 +1944,6 @@ function applyTargets() {
   const xm = document.getElementById('xMax');
   const neededMax = Math.max(...currentTargets) + 0.05;
   if (xm && num(xm.value, 0) < neededMax) xm.value = neededMax.toFixed(2);
-  closeTargetsModal();
   runAllCalculations();
 }
 
@@ -1964,15 +1961,13 @@ function closeFormulasModal() {
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    closeFormulasModal();
-    closeTargetsModal();
-  }
+  if (e.key === 'Escape') closeFormulasModal();
 });
 
 window.addEventListener('DOMContentLoaded', () => {
   renderAllFormulasInline();
   renderRegressionEditor(true);
+  renderTargetsEditor();
   updateZoomButton();
   runAllCalculations();
 

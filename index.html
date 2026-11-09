@@ -113,7 +113,7 @@
 
         <div class="px-5 py-2.5 border-b border-slate-200 bg-white flex items-center gap-3 flex-wrap text-[11px]">
           <span class="font-bold uppercase tracking-wide text-slate-400">Параметры</span>
-          <button onclick="openTargetsModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 border border-blue-600 text-white font-semibold shadow-xs transition">
+          <button onclick="showTargetsPanel()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 border border-blue-600 text-white font-semibold shadow-xs transition">
             Настроить цели X*ᵢ и веса
           </button>
           <label class="flex items-center gap-1.5">
@@ -196,6 +196,31 @@
               </p>
             </div>
 
+            <div id="targetsPanel" class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div>
+                  <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Цели и веса (13)</div>
+                  <div class="text-[10px] text-slate-500">Xᵢ · цель X*ᵢ · вес wᵢ</div>
+                </div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <label class="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-blue-50 border border-blue-200">
+                    <span class="font-semibold text-blue-800">Общая цель</span>
+                    <input type="number" id="globalTarget" value="0.50" min="0.05" max="0.95" step="0.05"
+                      oninput="setAllTargetInputs(this.value)"
+                      class="w-14 h-6 px-1 text-center font-bold text-blue-700 border border-blue-300 rounded bg-white">
+                  </label>
+                  <button onclick="setAllTargetInputs(0.5)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">0.50 всем</button>
+                  <button onclick="setAllWeightInputs(1)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">Веса = 1</button>
+                  <button onclick="resetTargetInputs()" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700">Сброс</button>
+                  <button onclick="applyTargets()" class="px-3 py-1 text-[11px] font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-xs">Применить</button>
+                </div>
+              </div>
+              <div id="targetsGrid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1.5"></div>
+              <p class="text-[10px] text-slate-500 leading-snug">
+                Вес 1 — как в статье; больше = важнее. Изменения применяются по кнопке «Применить».
+              </p>
+            </div>
+
             <div class="chart-wrapper-lg bg-white rounded-xl border border-slate-100 p-2">
               <canvas id="dynamicsChart"></canvas>
             </div>
@@ -217,10 +242,10 @@
             <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div class="text-[11px] text-blue-950">
                 <b>Цели задаются для каждого показателя отдельно.</b>
-                Жёлтая линия на радаре — это X*ᵢ, а не одна общая константа.
+                Жёлтая линия на радаре — это X*ᵢ, а не одна общая константа. Настроить их можно на вкладке «Прогноз».
               </div>
-              <button onclick="openTargetsModal()" class="shrink-0 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-xs transition">
-                Настроить цели и веса
+              <button onclick="showTargetsPanel()" class="shrink-0 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-xs transition">
+                Перейти к настройке
               </button>
             </div>
 
@@ -364,7 +389,7 @@
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
           <div class="font-bold text-slate-800 mb-1">Целевая функция (1)</div>
           $$Z(p(t))=\int\limits_{t_0}^{t_N}\sum_{i=1}^{n}\bigl(X_i^{*}-X_i(t,p(t))\bigr)^2\gamma_i\,dt\to\min$$
-          <p class="text-[11px] text-slate-500 mt-1">γᵢ — веса показателей; по умолчанию все равны 1/15. Xᵢ* задаются индивидуально в окне «Цели и веса» (по умолчанию 0.50); X₁₄ = X₁₅ = 1. В сумму входят 13 моделируемых показателей и два постоянных слагаемых (1 − 0.5)² для X₁₄, X₁₅.</p>
+          <p class="text-[11px] text-slate-500 mt-1">γᵢ — веса показателей; по умолчанию все равны 1/15. Xᵢ* задаются индивидуально в блоке «Цели и веса» на вкладке «Прогноз» (по умолчанию 0.50); X₁₄ = X₁₅ = 1. В сумму входят 13 моделируемых показателей и два постоянных слагаемых (1 − 0.5)² для X₁₄, X₁₅.</p>
         </div>
 
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
@@ -377,7 +402,7 @@
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
           <div class="font-bold text-slate-800 mb-1">Ограничения (3) и нормировка (8)</div>
           $$X_i^{\min}\le X_i(t,p(t))\le X_i^{\max},\qquad X_i^{*}(t)=\frac{X_i(t)}{X_i^{norm}}$$
-          <p class="text-[11px] text-slate-500 mt-1">По умолчанию Xᵢ ∈ [0.25; 1.00]; индивидуальные цели X*ᵢ задаются в окне «Цели и веса», границы Xmin/Xmax — в строке параметров. Ограничение проверяется <b>после</b> интегрирования; внутри RK4 значения не «прибиваются» к границам, иначе решение искажается, а нарушение (3) маскируется.</p>
+          <p class="text-[11px] text-slate-500 mt-1">По умолчанию Xᵢ ∈ [0.25; 1.00]; индивидуальные цели X*ᵢ задаются в блоке «Цели и веса» на вкладке «Прогноз», границы Xmin/Xmax — в строке параметров. Ограничение проверяется <b>после</b> интегрирования; внутри RK4 значения не «прибиваются» к границам, иначе решение искажается, а нарушение (3) маскируется.</p>
         </div>
 
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
@@ -421,57 +446,6 @@
             <li>В табл. 1 — 17 показателей, в тексте — 15; X₁₄ и X₁₅ в модели не интегрируются, а входят постоянными слагаемыми (1 − X*)².</li>
           </ul>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Модальное окно: цели и веса показателей -->
-  <div id="targetsModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="targetsModalTitle">
-    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeTargetsModal()"></div>
-    <div class="relative mx-auto mt-10 mb-10 w-[min(820px,94vw)] max-h-[88vh] overflow-y-auto custom-scroll bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4">
-      <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
-        <div>
-          <h2 id="targetsModalTitle" class="text-base font-bold text-slate-900">Цели и веса показателей</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Индивидуальная цель X*ᵢ и важность показателя в функционале Z</p>
-        </div>
-        <button onclick="closeTargetsModal()" class="shrink-0 w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold transition" aria-label="Закрыть">✕</button>
-      </div>
-
-      <div class="flex items-center gap-2 flex-wrap text-[11px]">
-        <label class="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-blue-200 bg-blue-50">
-          <span class="font-semibold text-blue-800">Общая цель X*</span>
-          <input type="number" id="globalTarget" value="0.50" min="0.05" max="0.95" step="0.05"
-            oninput="setAllTargetInputs(this.value)"
-            class="w-16 h-7 px-1 text-center font-bold text-blue-700 border border-blue-300 rounded bg-white">
-        </label>
-        <button onclick="setAllTargetInputs(0.5)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 font-semibold text-slate-700">Цель 0.50 всем</button>
-        <button onclick="setAllWeightInputs(1)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 font-semibold text-slate-700">Веса = 1</button>
-        <button onclick="resetTargetInputs()" class="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 font-semibold text-rose-700">Сбросить всё</button>
-        <span class="text-slate-400">Вес 1 — как в статье; больше = важнее.</span>
-      </div>
-
-      <div class="overflow-x-auto custom-scroll">
-        <table class="w-full text-[11px] border-collapse bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <thead>
-            <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
-              <th class="p-2 text-left">Показатель</th>
-              <th class="p-2">Цель X*ᵢ</th>
-              <th class="p-2">Вес (важность)</th>
-            </tr>
-          </thead>
-          <tbody id="targetsTableBody"></tbody>
-        </table>
-      </div>
-
-      <p class="text-[10px] text-slate-500 leading-snug">
-        Z = (11 / 15) · ∫ [Σ wᵢ(X*ᵢ − Xᵢ)² + 2(1 − 0.5)²] dt. Вес wᵢ — множитель важности:
-        при wᵢ = 1 и целях 0.50 получается Z(p₁) = 1.6031. При изменении целей или весов
-        сравнение со справочным Z статьи отключается.
-      </p>
-
-      <div class="flex justify-end gap-2 pt-1">
-        <button onclick="closeTargetsModal()" class="px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-slate-600 text-xs font-semibold">Отмена</button>
-        <button onclick="applyTargets()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs">Применить</button>
       </div>
     </div>
   </div>
