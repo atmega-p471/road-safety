@@ -1926,6 +1926,22 @@ function resetTargetInputs() {
   if (g) g.value = MODEL.X_STAR_DEFAULT.toFixed(2);
 }
 
+function randomizeTargets() {
+  let sum = 0;
+  for (let i = 0; i < 13; i++) {
+    const target = Math.round((0.30 + Math.random() * 0.40) * 20) / 20;
+    const weight = Math.round((1 + Math.random() * 4) * 2) / 2;
+    const tEl = document.getElementById(`tgt_${i}`);
+    const wEl = document.getElementById(`wgt_${i}`);
+    if (tEl) tEl.value = target.toFixed(2);
+    if (wEl) wEl.value = weight.toFixed(1);
+    sum += target;
+  }
+  const g = document.getElementById('globalTarget');
+  if (g) g.value = (sum / 13).toFixed(2);
+  applyTargets();
+}
+
 function applyTargets() {
   currentTargets = X_VARS.map((_, i) => {
     const el = document.getElementById(`tgt_${i}`);
