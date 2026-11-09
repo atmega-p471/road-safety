@@ -160,6 +160,7 @@ let charts = {};
 let hiddenState = X_VARS.map((_, i) => ![0, 1, 2, 3].includes(i));
 let currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
 let currentWeights = X_VARS.map(() => 1);
+let currentXMin = MODEL.X_MIN;
 let currentXMax = MODEL.X_MAX;
 // Фон графика: зелёный допустимый коридор (3) и целевая линия X*.
 // Это визуально разделяет «допустимо» и «достигнута цель».
@@ -171,7 +172,7 @@ const corridorPlugin = {
     if (!chartArea || !y) return;
 
     const yMax = y.getPixelForValue(currentXMax);
-    const yMin = y.getPixelForValue(MODEL.X_MIN);
+    const yMin = y.getPixelForValue(currentXMin);
     const top = Math.max(chartArea.top, Math.min(yMax, yMin));
     const bottom = Math.min(chartArea.bottom, Math.max(yMax, yMin));
 
@@ -196,7 +197,7 @@ const corridorPlugin = {
 
     if (yMax >= chartArea.top && yMax <= chartArea.bottom) {
       ctx.fillStyle = 'rgba(5, 150, 105, 0.9)';
-      ctx.fillText(`допустимая область (3): 0.25 … ${currentXMax.toFixed(2)}`, chartArea.left + 7, yMax - 3);
+      ctx.fillText(`допустимая область (3): ${currentXMin.toFixed(2)} … ${currentXMax.toFixed(2)}`, chartArea.left + 7, yMax - 3);
     }
     ctx.restore();
   }
@@ -455,7 +456,7 @@ function checkBounds(sim) {
     for (const v of source[i]) {
       let over = 0;
       if (v > currentXMax + 1e-9) over = v - currentXMax;
-      else if (v < MODEL.X_MIN - 1e-9) over = MODEL.X_MIN - v;
+      else if (v < currentXMin - 1e-9) over = currentXMin - v;
       if (over > 0) {
         count++;
         if (!worst || over > worst.over) {
@@ -655,13 +656,22 @@ function runAllCalculations() {
   const maxTarget = Math.max(...currentTargets);
   const xMaxRaw = clamp(elValue('xMax', MODEL.X_MAX), 0.55, 2.0);
   const xMax = Math.max(xMaxRaw, maxTarget + 0.05);
+  const xMinRaw = clamp(elValue('xMin', MODEL.X_MIN), 0.0, 0.9);
+  const xMin = Math.max(0, Math.min(xMinRaw, xMax - 0.05));
+  currentXMin = xMin;
   currentXMax = xMax;
   const xmEl = document.getElementById('xMax');
   if (xmEl && document.activeElement !== xmEl && Math.abs(num(xmEl.value, xMax) - xMax) > 1e-9) {
     xmEl.value = xMax.toFixed(2);
   }
+  const xnEl = document.getElementById('xMin');
+  if (xnEl && document.activeElement !== xnEl && Math.abs(num(xnEl.value, xMin) - xMin) > 1e-9) {
+    xnEl.value = xMin.toFixed(2);
+  }
   const corridorLabel = document.getElementById('corridorLimitLabel');
   if (corridorLabel) corridorLabel.textContent = xMax.toFixed(2);
+  const corridorMinLabel = document.getElementById('corridorMinLabel');
+  if (corridorMinLabel) corridorMinLabel.textContent = xMin.toFixed(2);
   const norm = clamp(elValue('normCoef', MODEL.NORM_DEFAULT), 1, 500);
 
   simulations = {};
@@ -670,6 +680,7 @@ function runAllCalculations() {
       plan,
       targets: currentTargets.slice(),
       weights: currentWeights.slice(),
+      xMin,
       xMax,
       norm
     };
@@ -747,10 +758,10 @@ function updateKPIs() {
     } else if (b.ok) {
       statusEl.textContent = 'В допустимой области (3)';
       statusEl.className = 'text-sm font-bold text-emerald-600 mt-2';
-      if (detailEl) detailEl.textContent = `Xᵢ ∈ [0.25; ${currentXMax.toFixed(2)}] на всём горизонте; это выполнение ограничения, а не достижение цели X*`;
+      if (detailEl) detailEl.textContent = `Xᵢ ∈ [${currentXMin.toFixed(2)}; ${currentXMax.toFixed(2)}] на всём горизонте; это выполнение ограничения, а не достижение цели X*`;
     } else {
       const code = X_VARS[b.i].code;
-      const limit = b.high ? currentXMax.toFixed(2) : '0.25';
+      const limit = b.high ? currentXMax.toFixed(2) : currentXMin.toFixed(2);
       statusEl.textContent = `Нарушение (3): ${code} = ${b.v.toFixed(2)} ${b.high ? '>' : '<'} ${limit}`;
       statusEl.className = 'text-sm font-bold text-rose-600 mt-2';
       if (detailEl) detailEl.textContent = `${X_VARS[b.i].name} — выход из коридора в ${b.count} точках расчётной сетки`;
@@ -790,9 +801,14 @@ function updatePlansUI() {
 
   const card2 = document.getElementById('planCard2');
   if (card2) {
-    card2.textContent = boundsP2.ok
-      ? `План p₂ (формально допустим): Z = ${z.p2.toFixed(4)}`
-      : `План p₂ — исключён: X₇ = ${boundsP2.v.toFixed(2)} > ${currentXMax.toFixed(2)} (Z = ${z.p2.toFixed(4)})`;
+    if (boundsP2.ok) {
+      card2.textContent = `План p₂ (формально допустим): Z = ${z.p2.toFixed(4)}`;
+    } else {
+      const code = X_VARS[boundsP2.i].code;
+      const dir = boundsP2.high ? '>' : '<';
+      const lim = boundsP2.high ? currentXMax.toFixed(2) : currentXMin.toFixed(2);
+      card2.textContent = `План p₂ — исключён: ${code} = ${boundsP2.v.toFixed(2)} ${dir} ${lim} (Z = ${z.p2.toFixed(4)})`;
+    }
   }
 
   const card3 = document.getElementById('planCard3');
@@ -830,8 +846,11 @@ function selectPlanPreset(planId) {
 function resetDefaults() {
   currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
   currentWeights = X_VARS.map(() => 1);
+  currentXMin = MODEL.X_MIN;
   const xm = document.getElementById('xMax');
   if (xm) xm.value = MODEL.X_MAX;
+  const xn = document.getElementById('xMin');
+  if (xn) xn.value = MODEL.X_MIN;
   const n = document.getElementById('normCoef');
   if (n) n.value = MODEL.NORM_DEFAULT;
   activePlan = 'p1';
@@ -977,7 +996,7 @@ function computeYRange(sim) {
   for (let i = 0; i < 13; i++) {
     if (!hiddenState[i]) vals.push(...src.series[i]);
   }
-  if (!vals.length) vals.push(MODEL.X_MIN, currentXMax);
+  if (!vals.length) vals.push(currentXMin, currentXMax);
 
   let lo = Math.min(...vals);
   let hi = Math.max(...vals);
@@ -1178,7 +1197,7 @@ function showChartLoadError() {
 }
 
 // --- Радар (Рис. 11-12) -----------------------------------------------------
-// Красное кольцо вокруг точки = значение вышло за [0.25; 1.00].
+// Красное кольцо вокруг точки = значение вышло за [Xmin; Xmax].
 const radarViolationPlugin = {
   id: 'radarViolation',
   afterDatasetsDraw(chart) {
@@ -1194,7 +1213,7 @@ const radarViolationPlugin = {
     meta.data.forEach((pt, i) => {
       const v = Number(values[i]);
       if (!Number.isFinite(v)) return;
-      if (v > currentXMax + 1e-9 || v < MODEL.X_MIN - 1e-9) {
+      if (v > currentXMax + 1e-9 || v < currentXMin - 1e-9) {
         ctx.beginPath();
         ctx.arc(pt.x, pt.y, 6.5, 0, Math.PI * 2);
         ctx.stroke();
@@ -1340,7 +1359,7 @@ function updateRadarTable(sim, t1, t2) {
     const v2 = b.values[i];
     const target = targets[i];
     const dev = v2 - target;
-    const outside = v1 > currentXMax + 1e-9 || v2 > currentXMax + 1e-9 || v1 < MODEL.X_MIN - 1e-9 || v2 < MODEL.X_MIN - 1e-9;
+    const outside = v1 > currentXMax + 1e-9 || v2 > currentXMax + 1e-9 || v1 < currentXMin - 1e-9 || v2 < currentXMin - 1e-9;
     const far = !outside && dev > 0.2;
     const status = outside
       ? '<span class="text-rose-600 font-bold">нарушение (3)</span>'
@@ -1376,7 +1395,7 @@ function updateRadarTable(sim, t1, t2) {
     </table>
     <p class="text-[10px] text-slate-500 mt-1.5">
       «В коридоре, выше цели» — ограничение (3) выполнено, но Xᵢ заметно больше X*; такой план допустим,
-      но получает больший штраф Z. «Нарушение (3)» — выход за [0.25; ${currentXMax.toFixed(2)}].
+      но получает больший штраф Z. «Нарушение (3)» — выход за [${currentXMin.toFixed(2)}; ${currentXMax.toFixed(2)}].
     </p>`;
 }
 
@@ -1882,6 +1901,11 @@ function renderTargetsEditor() {
 
 function openTargetsModal() {
   renderTargetsEditor();
+  const g = document.getElementById('globalTarget');
+  if (g) {
+    const avg = currentTargets.reduce((a, b) => a + b, 0) / currentTargets.length;
+    g.value = avg.toFixed(2);
+  }
   document.getElementById('targetsModal')?.classList.remove('hidden');
 }
 
@@ -1906,6 +1930,8 @@ function setAllWeightInputs(value) {
 function resetTargetInputs() {
   setAllTargetInputs(MODEL.X_STAR_DEFAULT);
   setAllWeightInputs(1);
+  const g = document.getElementById('globalTarget');
+  if (g) g.value = MODEL.X_STAR_DEFAULT.toFixed(2);
 }
 
 function applyTargets() {

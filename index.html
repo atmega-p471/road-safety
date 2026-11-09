@@ -113,15 +113,20 @@
 
         <div class="px-5 py-2.5 border-b border-slate-200 bg-white flex items-center gap-3 flex-wrap text-[11px]">
           <span class="font-bold uppercase tracking-wide text-slate-400">Параметры</span>
-          <button onclick="openTargetsModal()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-semibold transition">
-            Цели и веса (13)
+          <button onclick="openTargetsModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 border border-blue-600 text-white font-semibold shadow-xs transition">
+            Настроить цели X*ᵢ и веса
           </button>
+          <label class="flex items-center gap-1.5">
+            <span class="font-semibold text-slate-600">X<sub>min</sub></span>
+            <input type="number" id="xMin" value="0.25" min="0.00" max="0.90" step="0.05" oninput="runAllCalculations()"
+              class="w-16 h-7 px-1 text-center font-bold text-amber-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
+          </label>
           <label class="flex items-center gap-1.5">
             <span class="font-semibold text-slate-600">X<sub>max</sub></span>
             <input type="number" id="xMax" value="1.00" min="0.55" max="2.00" step="0.05" oninput="runAllCalculations()"
               class="w-16 h-7 px-1 text-center font-bold text-rose-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
           </label>
-          <span class="text-[10px] text-slate-400">цели и веса влияют на Z; Xmax — на ограничение (3) и радар</span>
+          <span class="text-[10px] text-slate-400">цели и веса влияют на Z; Xmin/Xmax — на ограничение (3) и радар</span>
         </div>
 
         <div class="p-5">
@@ -196,32 +201,46 @@
             </div>
 
             <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900">
-              <b>Зелёная полоса</b> — допустимый коридор (3): Xᵢ ∈ [0.25; <span id="corridorLimitLabel">1.00</span>].
+              <b>Зелёная полоса</b> — допустимый коридор (3): Xᵢ ∈ [<span id="corridorMinLabel">0.25</span>; <span id="corridorLimitLabel">1.00</span>].
             </div>
 
             <p class="text-[11px] text-slate-500 leading-snug">
               Рис. 8. Безразмерное время t ∈ [0; 1], горизонт 11 месяцев, шаг h = 0.125, RK4.
-              Кривые построены по 129 точкам. Допустимая область Xᵢ ∈ [0.25; Xmax] контролируется
-              в блоке «Статус ограничений»; верхняя граница задаётся в строке параметров.
+              Кривые построены по 129 точкам. Допустимая область Xᵢ ∈ [Xmin; Xmax] контролируется
+              в блоке «Статус ограничений»; границы Xmin/Xmax задаются в строке параметров.
             </p>
 
           </div>
 
           <!-- Вкладка 2: Радар -->
           <div id="tab_radar" class="tab-content hidden space-y-4">
-            <div class="flex flex-col sm:flex-row gap-2 justify-between sm:items-center text-xs bg-slate-50 p-3 rounded-xl border">
-              <span class="whitespace-nowrap">Срез t₁: <input type="range" id="radarT1" min="0" max="1" step="0.125" value="0" oninput="updateRadarCharts()" class="custom-slider align-middle ml-2">
-                <span id="valRadarT1" class="font-mono font-bold text-blue-700">0.000</span></span>
-              <span class="whitespace-nowrap">Срез t₂: <input type="range" id="radarT2" min="0" max="1" step="0.125" value="1" oninput="updateRadarCharts()" class="custom-slider align-middle ml-2">
-                <span id="valRadarT2" class="font-mono font-bold text-blue-700">1.000</span></span>
+            <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="text-[11px] text-blue-950">
+                <b>Цели задаются для каждого показателя отдельно.</b>
+                Жёлтая линия на радаре — это X*ᵢ, а не одна общая константа.
+              </div>
+              <button onclick="openTargetsModal()" class="shrink-0 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-xs transition">
+                Настроить цели и веса
+              </button>
             </div>
+
             <div class="grid grid-cols-1 gap-4">
               <div class="p-4 bg-slate-50 rounded-xl border">
                 <h4 id="radarTitle1" class="text-xs font-bold text-center text-slate-600 mb-2">Рис. 11 — срез t₁ = 0.000</h4>
+                <div class="flex items-center justify-between gap-3 text-[11px] mb-2">
+                  <span class="whitespace-nowrap font-semibold text-slate-600">Срез t₁</span>
+                  <input type="range" id="radarT1" min="0" max="1" step="0.125" value="0" oninput="updateRadarCharts()" class="custom-slider flex-1 mx-2">
+                  <span id="valRadarT1" class="font-mono font-bold text-blue-700 w-12 text-right">0.000</span>
+                </div>
                 <div class="chart-wrapper-sm chart-wrapper-radar"><canvas id="radarChart1"></canvas></div>
               </div>
               <div class="p-4 bg-slate-50 rounded-xl border">
                 <h4 id="radarTitle2" class="text-xs font-bold text-center text-slate-600 mb-2">Рис. 12 — срез t₂ = 1.000</h4>
+                <div class="flex items-center justify-between gap-3 text-[11px] mb-2">
+                  <span class="whitespace-nowrap font-semibold text-slate-600">Срез t₂</span>
+                  <input type="range" id="radarT2" min="0" max="1" step="0.125" value="1" oninput="updateRadarCharts()" class="custom-slider flex-1 mx-2">
+                  <span id="valRadarT2" class="font-mono font-bold text-blue-700 w-12 text-right">1.000</span>
+                </div>
                 <div class="chart-wrapper-sm chart-wrapper-radar"><canvas id="radarChart2"></canvas></div>
               </div>
             </div>
@@ -229,8 +248,8 @@
             <p class="text-[11px] text-slate-500 leading-snug">
               Радар соединяет 13 дискретных значений показателей прямыми отрезками — это диаграмма, а не траектория.
               Изменение решения во времени показано на вкладке «1. Прогноз»; здесь важен уровень каждого Xᵢ относительно
-              цели X* и границ коридора. <b>Красное кольцо</b> вокруг точки — значение вышло за [0.25; Xmax];
-              жёлтая пунктирная окружность — цель X*; красная — верхняя граница Xmax. Если модель пытается уйти
+              индивидуальной цели X*ᵢ и границ коридора. <b>Красное кольцо</b> вокруг точки — значение вышло за [Xmin; Xmax];
+              жёлтая пунктирная линия — цели X*ᵢ; красная — верхняя граница Xmax. Если модель пытается уйти
               ниже нуля, значение ограничивается нулём: отрицательных показателей не существует.
             </p>
           </div>
@@ -358,7 +377,7 @@
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
           <div class="font-bold text-slate-800 mb-1">Ограничения (3) и нормировка (8)</div>
           $$X_i^{\min}\le X_i(t,p(t))\le X_i^{\max},\qquad X_i^{*}(t)=\frac{X_i(t)}{X_i^{norm}}$$
-          <p class="text-[11px] text-slate-500 mt-1">По умолчанию Xᵢ ∈ [0.25; 1.00]; индивидуальные цели X*ᵢ задаются в окне «Цели и веса», верхняя граница Xmax — в строке параметров. Ограничение проверяется <b>после</b> интегрирования; внутри RK4 значения не «прибиваются» к границам, иначе решение искажается, а нарушение (3) маскируется.</p>
+          <p class="text-[11px] text-slate-500 mt-1">По умолчанию Xᵢ ∈ [0.25; 1.00]; индивидуальные цели X*ᵢ задаются в окне «Цели и веса», границы Xmin/Xmax — в строке параметров. Ограничение проверяется <b>после</b> интегрирования; внутри RK4 значения не «прибиваются» к границам, иначе решение искажается, а нарушение (3) маскируется.</p>
         </div>
 
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
@@ -368,7 +387,7 @@
         </div>
 
         <div class="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-950">
-          <b>X* и допустимая область — разные вещи.</b> X* (по умолчанию 0.50) — цель; [0.25; Xmax] — коридор ограничения (3).
+          <b>X* и допустимая область — разные вещи.</b> X* (по умолчанию 0.50) — цель; [Xmin; Xmax] — коридор ограничения (3).
           Поэтому значение 0.8 «выше нормы» (цели), но всё ещё допустимо. Статус «в допустимой области» не означает
           «достигнут норматив»; за отклонение от X* начисляется штраф Z. Нарушением считается только выход за
           границы коридора.
@@ -419,6 +438,12 @@
       </div>
 
       <div class="flex items-center gap-2 flex-wrap text-[11px]">
+        <label class="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-blue-200 bg-blue-50">
+          <span class="font-semibold text-blue-800">Общая цель X*</span>
+          <input type="number" id="globalTarget" value="0.50" min="0.05" max="0.95" step="0.05"
+            oninput="setAllTargetInputs(this.value)"
+            class="w-16 h-7 px-1 text-center font-bold text-blue-700 border border-blue-300 rounded bg-white">
+        </label>
         <button onclick="setAllTargetInputs(0.5)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 font-semibold text-slate-700">Цель 0.50 всем</button>
         <button onclick="setAllWeightInputs(1)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 font-semibold text-slate-700">Веса = 1</button>
         <button onclick="resetTargetInputs()" class="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 font-semibold text-rose-700">Сбросить всё</button>
