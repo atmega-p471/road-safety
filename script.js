@@ -1293,11 +1293,11 @@ function renderSingleRadar(canvasId, chartKey, tVal, sim) {
             angleLines: { color: '#e2e8f0' },
             ticks: {
               stepSize: 0.1,
-              font: { size: 8 },
-              backdropColor: 'rgba(255,255,255,0.7)',
-              color: '#94a3b8'
+              font: { size: 9, weight: '600' },
+              backdropColor: 'rgba(255,255,255,0.85)',
+              color: '#64748b'
             },
-            pointLabels: { font: { size: 11, weight: '700' }, color: '#334155' }
+            pointLabels: { font: { size: 12, weight: '700' }, color: '#334155' }
           }
         }
       },

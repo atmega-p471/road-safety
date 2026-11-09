@@ -35,19 +35,6 @@
         </div>
       </div>
 
-      <div class="hidden lg:flex items-center gap-2.5 text-[11px]">
-        <label class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200">
-          <span class="font-semibold text-slate-600">Цель X*</span>
-          <input type="number" id="xStar" value="0.50" min="0.10" max="0.90" step="0.05" oninput="runAllCalculations()"
-            class="w-14 h-7 px-1 text-center font-bold text-blue-700 border border-slate-300 rounded bg-white">
-        </label>
-        <label class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200">
-          <span class="font-semibold text-slate-600">X<sub>max</sub></span>
-          <input type="number" id="xMax" value="1.00" min="0.55" max="2.00" step="0.05" oninput="runAllCalculations()"
-            class="w-14 h-7 px-1 text-center font-bold text-rose-700 border border-slate-300 rounded bg-white">
-        </label>
-      </div>
-
       <div class="flex items-center gap-2.5">
         <button onclick="openFormulasModal()" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs sm:text-sm font-semibold rounded-lg border border-blue-200 transition shadow-xs">
           Справочник формул
@@ -122,6 +109,21 @@
           <button onclick="switchTab('tab_plans')" id="btn_tab_plans" class="tab-btn px-3.5 py-2 text-xs font-medium rounded-t-lg whitespace-nowrap transition">
             5. Планы
           </button>
+        </div>
+
+        <div class="px-5 py-2.5 border-b border-slate-200 bg-white flex items-center gap-3 flex-wrap text-[11px]">
+          <span class="font-bold uppercase tracking-wide text-slate-400">Параметры</span>
+          <label class="flex items-center gap-1.5">
+            <span class="font-semibold text-slate-600">Цель X*</span>
+            <input type="number" id="xStar" value="0.50" min="0.10" max="0.90" step="0.05" oninput="runAllCalculations()"
+              class="w-16 h-7 px-1 text-center font-bold text-blue-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
+          </label>
+          <label class="flex items-center gap-1.5">
+            <span class="font-semibold text-slate-600">X<sub>max</sub></span>
+            <input type="number" id="xMax" value="1.00" min="0.55" max="2.00" step="0.05" oninput="runAllCalculations()"
+              class="w-16 h-7 px-1 text-center font-bold text-rose-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
+          </label>
+          <span class="text-[10px] text-slate-400">цель влияет на Z; Xmax — на ограничение (3) и радар</span>
         </div>
 
         <div class="p-5">
@@ -215,7 +217,7 @@
               <span class="whitespace-nowrap">Срез t₂: <input type="range" id="radarT2" min="0" max="1" step="0.125" value="1" oninput="updateRadarCharts()" class="custom-slider align-middle ml-2">
                 <span id="valRadarT2" class="font-mono font-bold text-blue-700">1.000</span></span>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 gap-4">
               <div class="p-4 bg-slate-50 rounded-xl border">
                 <h4 id="radarTitle1" class="text-xs font-bold text-center text-slate-600 mb-2">Рис. 11 — срез t₁ = 0.000</h4>
                 <div class="chart-wrapper-sm chart-wrapper-radar"><canvas id="radarChart1"></canvas></div>
