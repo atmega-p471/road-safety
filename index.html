@@ -9,7 +9,7 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Стили -->
-  <link rel="stylesheet" href="style.css?v=20261109-3">
+  <link rel="stylesheet" href="style.css?v=20261109-4">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- MathJax -->
@@ -127,33 +127,6 @@
           <span class="text-[10px] text-slate-400">Xmin/Xmax — на ограничение (3) и радар</span>
         </div>
 
-        <div class="px-5 py-2.5 border-b border-slate-200 bg-white">
-          <div id="targetsPanel" class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-              <div>
-                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Цели и веса (13)</div>
-                <div class="text-[10px] text-slate-500">Xᵢ · цель X*ᵢ · вес wᵢ — настройка над графиками</div>
-              </div>
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <label class="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-blue-50 border border-blue-200">
-                  <span class="font-semibold text-blue-800">Общая цель</span>
-                  <input type="number" id="globalTarget" value="0.50" min="0.05" max="0.95" step="0.05"
-                    oninput="setAllTargetInputs(this.value)"
-                    class="w-14 h-6 px-1 text-center font-bold text-blue-700 border border-blue-300 rounded bg-white">
-                </label>
-                <button onclick="setAllTargetInputs(0.5)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">0.50 всем</button>
-                <button onclick="setAllWeightInputs(1)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">Веса = 1</button>
-                <button onclick="resetTargetInputs()" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700">Сброс</button>
-                <button onclick="applyTargets()" class="px-3 py-1 text-[11px] font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-xs">Применить</button>
-              </div>
-            </div>
-            <div id="targetsGrid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1.5"></div>
-            <p class="text-[10px] text-slate-500 leading-snug">
-              Вес 1 — как в статье; больше = важнее. Изменения применяются по кнопке «Применить».
-            </p>
-          </div>
-        </div>
-
         <div class="p-5">
 
           <!-- Вкладка 1: Динамика с таблицей начальных условий -->
@@ -239,6 +212,31 @@
 
           <!-- Вкладка 2: Радар -->
           <div id="tab_radar" class="tab-content hidden space-y-4">
+            <div id="targetsPanel" class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div>
+                  <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Цели и веса (13)</div>
+                  <div class="text-[10px] text-slate-500">Xᵢ · цель X*ᵢ · вес wᵢ — настройка над лепестковыми графиками</div>
+                </div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <label class="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-blue-50 border border-blue-200">
+                    <span class="font-semibold text-blue-800">Общая цель</span>
+                    <input type="number" id="globalTarget" value="0.50" min="0.05" max="0.95" step="0.05"
+                      oninput="setAllTargetInputs(this.value)"
+                      class="w-14 h-6 px-1 text-center font-bold text-blue-700 border border-blue-300 rounded bg-white">
+                  </label>
+                  <button onclick="setAllTargetInputs(0.5)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">0.50 всем</button>
+                  <button onclick="setAllWeightInputs(1)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">Веса = 1</button>
+                  <button onclick="resetTargetInputs()" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700">Сброс</button>
+                  <button onclick="applyTargets()" class="px-3 py-1 text-[11px] font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-xs">Применить</button>
+                </div>
+              </div>
+              <div id="targetsGrid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1.5"></div>
+              <p class="text-[10px] text-slate-500 leading-snug">
+                Вес 1 — как в статье; больше = важнее. Изменения применяются по кнопке «Применить».
+              </p>
+            </div>
+
             <div class="grid grid-cols-1 gap-4">
               <div class="p-4 bg-slate-50 rounded-xl border">
                 <h4 id="radarTitle1" class="text-xs font-bold text-center text-slate-600 mb-2">Рис. 11 — срез t₁ = 0.000</h4>
@@ -379,7 +377,7 @@
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
           <div class="font-bold text-slate-800 mb-1">Целевая функция (1)</div>
           $$Z(p(t))=\int\limits_{t_0}^{t_N}\sum_{i=1}^{n}\bigl(X_i^{*}-X_i(t,p(t))\bigr)^2\gamma_i\,dt\to\min$$
-          <p class="text-[11px] text-slate-500 mt-1">γᵢ — веса показателей; по умолчанию все равны 1/15. Xᵢ* задаются индивидуально в блоке «Цели и веса» над вкладками (по умолчанию 0.50); X₁₄ = X₁₅ = 1. В сумму входят 13 моделируемых показателей и два постоянных слагаемых (1 − 0.5)² для X₁₄, X₁₅.</p>
+          <p class="text-[11px] text-slate-500 mt-1">γᵢ — веса показателей; по умолчанию все равны 1/15. Xᵢ* задаются индивидуально в блоке «Цели и веса» на вкладке «Радар» (по умолчанию 0.50); X₁₄ = X₁₅ = 1. В сумму входят 13 моделируемых показателей и два постоянных слагаемых (1 − 0.5)² для X₁₄, X₁₅.</p>
         </div>
 
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
@@ -392,7 +390,7 @@
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
           <div class="font-bold text-slate-800 mb-1">Ограничения (3) и нормировка (8)</div>
           $$X_i^{\min}\le X_i(t,p(t))\le X_i^{\max},\qquad X_i^{*}(t)=\frac{X_i(t)}{X_i^{norm}}$$
-          <p class="text-[11px] text-slate-500 mt-1">По умолчанию Xᵢ ∈ [0.25; 1.00]; индивидуальные цели X*ᵢ задаются в блоке «Цели и веса» над вкладками, границы Xmin/Xmax — в строке параметров. Ограничение проверяется <b>после</b> интегрирования; внутри RK4 значения не «прибиваются» к границам, иначе решение искажается, а нарушение (3) маскируется.</p>
+          <p class="text-[11px] text-slate-500 mt-1">По умолчанию Xᵢ ∈ [0.25; 1.00]; индивидуальные цели X*ᵢ задаются в блоке «Цели и веса» на вкладке «Радар», границы Xmin/Xmax — в строке параметров. Ограничение проверяется <b>после</b> интегрирования; внутри RK4 значения не «прибиваются» к границам, иначе решение искажается, а нарушение (3) маскируется.</p>
         </div>
 
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
@@ -440,7 +438,7 @@
     </div>
   </div>
 
-  <script src="script.js?v=20261109-3"></script>
+  <script src="script.js?v=20261109-4"></script>
 </body>
 </html>
 
