@@ -1905,12 +1905,6 @@ function renderTargetsEditor() {
   }
 }
 
-function showTargetsPanel() {
-  switchTab('tab_dynamics');
-  const panel = document.getElementById('targetsPanel');
-  if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
 function setAllTargetInputs(value) {
   for (let i = 0; i < 13; i++) {
     const el = document.getElementById(`tgt_${i}`);
