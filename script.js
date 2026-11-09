@@ -18,7 +18,6 @@ const MODEL = Object.freeze({
   X_STAR_DEFAULT: 0.5,
   Z_SAMPLES: 400,
   Z_MONTHS: 11.0,        // в статье Z берется на 11-месячном интервале (t = 1..12)
-  WEIGHT: 1 / 15,
   DENSE_PER_STEP: 16     // 8 интервалов * 16 + 1 = 129 точек для графиков
 });
 
@@ -159,7 +158,8 @@ let simulations = {};        // результаты по планам p1/p2/p3
 let lastSimulation = null;   // активный план
 let charts = {};
 let hiddenState = X_VARS.map((_, i) => ![0, 1, 2, 3].includes(i));
-let currentXStar = MODEL.X_STAR_DEFAULT;
+let currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
+let currentWeights = X_VARS.map(() => 1);
 let currentXMax = MODEL.X_MAX;
 // Фон графика: зелёный допустимый коридор (3) и целевая линия X*.
 // Это визуально разделяет «допустимо» и «достигнута цель».
@@ -416,6 +416,9 @@ function fitQuadratic(tArr, yArr) {
 function computeObjective(sim, params) {
   const N = MODEL.Z_SAMPLES;
   const dt = MODEL.T_MAX / N;
+  const targets = params.targets || X_VARS.map(() => params.xStar ?? MODEL.X_STAR_DEFAULT);
+  const weights = params.weights || X_VARS.map(() => 1);
+  const wsum = X_VARS.length + 2; // 13 показателей + 2 постоянных слагаемых X14/X15
   let acc = 0;
 
   for (let s = 0; s <= N; s++) {
@@ -426,17 +429,17 @@ function computeObjective(sim, params) {
     for (let i = 0; i < 13; i++) {
       const q = sim.fittedPolys[i];
       const v = q.a * t * t + q.b * t + q.c;
-      const d = params.xStar - v;
-      dev += d * d;
+      const d = targets[i] - v;
+      dev += weights[i] * d * d;
     }
-    // X14 = X15 = 1 (показатели, не входящие в модель)
-    dev += 2 * Math.pow(1 - params.xStar, 2);
+    // X14 = X15 = 1 (показатели, не входящие в модель), цель статьи 0.5
+    dev += 2 * Math.pow(1 - 0.5, 2);
 
     acc += w * dev;
   }
 
   const integral = (dt / 3) * acc;
-  return { Z: integral * MODEL.WEIGHT * MODEL.Z_MONTHS, integral };
+  return { Z: integral * (1 / wsum) * MODEL.Z_MONTHS, integral };
 }
 
 function checkBounds(sim) {
@@ -467,7 +470,7 @@ function checkBounds(sim) {
 }
 
 // Насколько решение далеко от целевого уровня X* (это НЕ проверка (3)).
-function targetStats(sim, xStar) {
+function targetStats(sim, targets) {
   const source = sim.dense ? sim.dense.series : sim.series;
   let sumAbs = 0;
   let maxAbs = 0;
@@ -475,11 +478,12 @@ function targetStats(sim, xStar) {
   let n = 0;
 
   for (let i = 0; i < 13; i++) {
+    const target = targets[i];
     for (const v of source[i]) {
-      const d = Math.abs(v - xStar);
+      const d = Math.abs(v - target);
       sumAbs += d;
       if (d > maxAbs) maxAbs = d;
-      if (v > xStar + 0.25) above++;
+      if (v > target + 0.25) above++;
       n++;
     }
   }
@@ -648,18 +652,27 @@ function resetDefaultCoeffs() {
 // 6. РАСЧЕТ И KPI
 // ============================================================================
 function runAllCalculations() {
-  const xStar = clamp(elValue('xStar', MODEL.X_STAR_DEFAULT), 0.05, 0.95);
+  const maxTarget = Math.max(...currentTargets);
   const xMaxRaw = clamp(elValue('xMax', MODEL.X_MAX), 0.55, 2.0);
-  const xMax = Math.max(xMaxRaw, xStar + 0.05);
-  currentXStar = xStar;
+  const xMax = Math.max(xMaxRaw, maxTarget + 0.05);
   currentXMax = xMax;
+  const xmEl = document.getElementById('xMax');
+  if (xmEl && document.activeElement !== xmEl && Math.abs(num(xmEl.value, xMax) - xMax) > 1e-9) {
+    xmEl.value = xMax.toFixed(2);
+  }
   const corridorLabel = document.getElementById('corridorLimitLabel');
   if (corridorLabel) corridorLabel.textContent = xMax.toFixed(2);
   const norm = clamp(elValue('normCoef', MODEL.NORM_DEFAULT), 1, 500);
 
   simulations = {};
   ['p1', 'p2', 'p3'].forEach(plan => {
-    const params = { plan, xStar, xMax, norm };
+    const params = {
+      plan,
+      targets: currentTargets.slice(),
+      weights: currentWeights.slice(),
+      xMax,
+      norm
+    };
     const sim = solveSystem(params);
     simulations[plan] = { params, sim, obj: computeObjective(sim, params) };
   });
@@ -691,8 +704,9 @@ function updateKPIs() {
   const deltaEl = document.getElementById('kpiZDelta');
   if (deltaEl) {
     const ref = REFERENCE_Z_VALUE[activePlan];
-    const sameTarget = Math.abs(params.xStar - 0.5) < 1e-9;
-    if (ref && sameTarget) {
+    const defaultTargets = params.targets.every(t => Math.abs(t - 0.5) < 1e-9);
+    const defaultWeights = params.weights.every(w => Math.abs(w - 1) < 1e-9);
+    if (ref && defaultTargets && defaultWeights) {
       const d = obj.Z - ref;
       const pct = (d / ref) * 100;
       const zero = Math.abs(d) < 0.00005;
@@ -704,7 +718,7 @@ function updateKPIs() {
         : `Δ к статье: ${signedFixed(d)}${pctText} ${worse ? '— хуже' : '— лучше'}`;
       deltaEl.className = `text-[11px] font-semibold mt-1 ${worse ? 'text-rose-600' : better ? 'text-emerald-600' : 'text-slate-500'}`;
     } else if (ref) {
-      deltaEl.textContent = `Справочное Z = ${ref.toFixed(4)} получено при X* = 0.50; при текущем X* сравнение не проводится`;
+      deltaEl.textContent = `Цели/веса изменены — сравнение с Z статьи (${ref.toFixed(4)}) не проводится`;
       deltaEl.className = 'text-[11px] font-semibold mt-1 text-slate-500';
     } else {
       deltaEl.textContent = 'Сравнение Z для p₂ не проводится: план недопустим';
@@ -712,13 +726,13 @@ function updateKPIs() {
     }
   }
 
-  // Близость к цели X* — это не ограничение (3), а качество плана.
-  const ts = targetStats(sim, params.xStar);
+  // Близость к целям X*ᵢ — это не ограничение (3), а качество плана.
+  const ts = targetStats(sim, params.targets);
   const gapEl = document.getElementById('kpiTargetGap');
   if (gapEl) gapEl.textContent = ts.meanAbs.toFixed(3);
   const gapDetail = document.getElementById('kpiTargetDetail');
   if (gapDetail) {
-    gapDetail.textContent = `среднее |Xᵢ − X*|; максимум ${ts.maxAbs.toFixed(3)}; ${(ts.shareAbove * 100).toFixed(0)}% точек выше X* + 0.25`;
+    gapDetail.textContent = `среднее |Xᵢ − X*ᵢ|; максимум ${ts.maxAbs.toFixed(3)}; ${(ts.shareAbove * 100).toFixed(0)}% точек выше X*ᵢ + 0.25`;
   }
 
   const statusEl = document.getElementById('kpiBoundsStatus');
@@ -814,8 +828,8 @@ function selectPlanPreset(planId) {
 }
 
 function resetDefaults() {
-  const x = document.getElementById('xStar');
-  if (x) x.value = MODEL.X_STAR_DEFAULT;
+  currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
+  currentWeights = X_VARS.map(() => 1);
   const xm = document.getElementById('xMax');
   if (xm) xm.value = MODEL.X_MAX;
   const n = document.getElementById('normCoef');
@@ -1017,8 +1031,8 @@ function updateDynamicsChart() {
               footer: (items) => {
                 if (!items.length) return '';
                 const v = items[0].parsed.y;
-                const xs = lastSimulation?.params?.xStar ?? MODEL.X_STAR_DEFAULT;
-                return `X* = ${xs.toFixed(2)}; отклонение ${v - xs >= 0 ? '+' : ''}${(v - xs).toFixed(3)}`;
+                const target = lastSimulation?.params?.targets?.[items[0].datasetIndex] ?? MODEL.X_STAR_DEFAULT;
+                return `X* = ${target.toFixed(2)}; отклонение ${v - target >= 0 ? '+' : ''}${(v - target).toFixed(3)}`;
               }
             }
           }
@@ -1225,7 +1239,7 @@ function renderSingleRadar(canvasId, chartKey, tVal, sim) {
 
   const slice = radarSlice(sim, tVal);
   const values = slice.values;
-  const xStar = lastSimulation.params.xStar;
+  const targets = lastSimulation.params.targets;
   const radarMax = Math.max(1.1, currentXMax + 0.1, Math.ceil(Math.max(...values) * 10) / 10 + 0.05);
 
   const data = {
@@ -1244,8 +1258,8 @@ function renderSingleRadar(canvasId, chartKey, tVal, sim) {
         pointBorderWidth: 1.2
       },
       {
-        label: 'Цель X*',
-        data: X_VARS.map(() => xStar),
+        label: 'Цели X*ᵢ',
+        data: targets,
         borderColor: '#d97706',
         borderDash: [5, 4],
         borderWidth: 1.6,
@@ -1306,7 +1320,7 @@ function renderSingleRadar(canvasId, chartKey, tVal, sim) {
   } else {
     const ds = charts[chartKey].data.datasets;
     ds[0].data = values;
-    ds[1].data = X_VARS.map(() => xStar);
+    ds[1].data = targets;
     ds[2].data = X_VARS.map(() => currentXMax);
     charts[chartKey].options.scales.r.max = radarMax;
     charts[chartKey].update('none');
@@ -1319,12 +1333,13 @@ function updateRadarTable(sim, t1, t2) {
 
   const a = radarSlice(sim, t1);
   const b = radarSlice(sim, t2);
-  const xStar = lastSimulation.params.xStar;
+  const targets = lastSimulation.params.targets;
 
   const rows = X_VARS.map((v, i) => {
     const v1 = a.values[i];
     const v2 = b.values[i];
-    const dev = v2 - xStar;
+    const target = targets[i];
+    const dev = v2 - target;
     const outside = v1 > currentXMax + 1e-9 || v2 > currentXMax + 1e-9 || v1 < MODEL.X_MIN - 1e-9 || v2 < MODEL.X_MIN - 1e-9;
     const far = !outside && dev > 0.2;
     const status = outside
@@ -1339,7 +1354,7 @@ function updateRadarTable(sim, t1, t2) {
       <td class="p-1.5 text-left font-semibold text-slate-700">${v.sub} <span class="font-normal text-slate-500">${v.name}</span></td>
       <td class="p-1.5 font-mono ${cls}">${v1.toFixed(3)}</td>
       <td class="p-1.5 font-mono ${cls}">${v2.toFixed(3)}</td>
-      <td class="p-1.5 font-mono text-slate-500">${xStar.toFixed(2)}</td>
+      <td class="p-1.5 font-mono text-slate-500">${target.toFixed(2)}</td>
       <td class="p-1.5 font-mono ${devCls}">${dev >= 0 ? '+' : ''}${dev.toFixed(3)}</td>
       <td class="p-1.5 text-[10px]">${status}</td>
     </tr>`;
@@ -1826,7 +1841,7 @@ function exportCSV() {
   const { sim, params, obj } = lastSimulation;
   const headers = ['t_machine_time', ...X_VARS.map(v => v.code)];
   const rows = [
-    `# plan=${params.plan}; X*=${params.xStar}; X_norm=${params.norm}; Z=${obj.Z.toFixed(4)}`,
+    `# plan=${params.plan}; targets=${params.targets.map(v => v.toFixed(2)).join(',')}; weights=${params.weights.join(',')}; Xmax=${params.xMax}; X_norm=${params.norm}; Z=${obj.Z.toFixed(4)}`,
     headers.join(';')
   ];
 
@@ -1847,6 +1862,68 @@ function exportCSV() {
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
+function renderTargetsEditor() {
+  const body = document.getElementById('targetsTableBody');
+  if (!body) return;
+
+  body.innerHTML = X_VARS.map((v, i) => `
+    <tr class="border-b border-slate-100 last:border-0">
+      <td class="p-2 text-left font-semibold text-slate-700">${v.sub} <span class="font-normal text-slate-500">${v.name}</span></td>
+      <td class="p-2">
+        <input type="number" id="tgt_${i}" value="${currentTargets[i].toFixed(2)}" min="0.05" max="0.95" step="0.05"
+          class="w-20 h-7 px-1 text-center font-bold text-blue-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
+      </td>
+      <td class="p-2">
+        <input type="number" id="wgt_${i}" value="${currentWeights[i]}" min="0.1" max="10" step="0.5"
+          class="w-20 h-7 px-1 text-center font-bold text-indigo-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
+      </td>
+    </tr>`).join('');
+}
+
+function openTargetsModal() {
+  renderTargetsEditor();
+  document.getElementById('targetsModal')?.classList.remove('hidden');
+}
+
+function closeTargetsModal() {
+  document.getElementById('targetsModal')?.classList.add('hidden');
+}
+
+function setAllTargetInputs(value) {
+  for (let i = 0; i < 13; i++) {
+    const el = document.getElementById(`tgt_${i}`);
+    if (el) el.value = value;
+  }
+}
+
+function setAllWeightInputs(value) {
+  for (let i = 0; i < 13; i++) {
+    const el = document.getElementById(`wgt_${i}`);
+    if (el) el.value = value;
+  }
+}
+
+function resetTargetInputs() {
+  setAllTargetInputs(MODEL.X_STAR_DEFAULT);
+  setAllWeightInputs(1);
+}
+
+function applyTargets() {
+  currentTargets = X_VARS.map((_, i) => {
+    const el = document.getElementById(`tgt_${i}`);
+    return clamp(num(el?.value, MODEL.X_STAR_DEFAULT), 0.05, 0.95);
+  });
+  currentWeights = X_VARS.map((_, i) => {
+    const el = document.getElementById(`wgt_${i}`);
+    return clamp(num(el?.value, 1), 0.1, 10);
+  });
+  const xm = document.getElementById('xMax');
+  const neededMax = Math.max(...currentTargets) + 0.05;
+  if (xm && num(xm.value, 0) < neededMax) xm.value = neededMax.toFixed(2);
+  closeTargetsModal();
+  runAllCalculations();
+}
+
 function openFormulasModal() {
   const modal = document.getElementById('formulasModal');
   if (!modal) return;
@@ -1861,7 +1938,10 @@ function closeFormulasModal() {
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeFormulasModal();
+  if (e.key === 'Escape') {
+    closeFormulasModal();
+    closeTargetsModal();
+  }
 });
 
 window.addEventListener('DOMContentLoaded', () => {
