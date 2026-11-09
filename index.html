@@ -35,6 +35,19 @@
         </div>
       </div>
 
+      <div class="hidden lg:flex items-center gap-2.5 text-[11px]">
+        <label class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200">
+          <span class="font-semibold text-slate-600">Цель X*</span>
+          <input type="number" id="xStar" value="0.50" min="0.10" max="0.90" step="0.05" oninput="runAllCalculations()"
+            class="w-14 h-7 px-1 text-center font-bold text-blue-700 border border-slate-300 rounded bg-white">
+        </label>
+        <label class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200">
+          <span class="font-semibold text-slate-600">X<sub>max</sub></span>
+          <input type="number" id="xMax" value="1.00" min="0.55" max="2.00" step="0.05" oninput="runAllCalculations()"
+            class="w-14 h-7 px-1 text-center font-bold text-rose-700 border border-slate-300 rounded bg-white">
+        </label>
+      </div>
+
       <div class="flex items-center gap-2.5">
         <button onclick="openFormulasModal()" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs sm:text-sm font-semibold rounded-lg border border-blue-200 transition shadow-xs">
           Справочник формул
@@ -183,13 +196,13 @@
             </div>
 
             <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900">
-              <b>Зелёная полоса</b> — допустимый коридор (3): Xᵢ ∈ [0.25; 1.00].
+              <b>Зелёная полоса</b> — допустимый коридор (3): Xᵢ ∈ [0.25; <span id="corridorLimitLabel">1.00</span>].
             </div>
 
             <p class="text-[11px] text-slate-500 leading-snug">
               Рис. 8. Безразмерное время t ∈ [0; 1], горизонт 11 месяцев, шаг h = 0.125, RK4.
-              Кривые построены по 129 точкам. Допустимая область Xᵢ ∈ [0.25; 1.00] контролируется
-              в блоке «Статус ограничений».
+              Кривые построены по 129 точкам. Допустимая область Xᵢ ∈ [0.25; Xmax] контролируется
+              в блоке «Статус ограничений»; верхняя граница задаётся в шапке.
             </p>
 
           </div>
@@ -216,8 +229,8 @@
             <p class="text-[11px] text-slate-500 leading-snug">
               Радар соединяет 13 дискретных значений показателей прямыми отрезками — это диаграмма, а не траектория.
               Изменение решения во времени показано на вкладке «1. Прогноз»; здесь важен уровень каждого Xᵢ относительно
-              цели X* и границ коридора. <b>Красное кольцо</b> вокруг точки — значение вышло за [0.25; 1.00];
-              жёлтая пунктирная окружность — цель X*; красная — верхняя граница 1.00. Если модель пытается уйти
+              цели X* и границ коридора. <b>Красное кольцо</b> вокруг точки — значение вышло за [0.25; Xmax];
+              жёлтая пунктирная окружность — цель X*; красная — верхняя граница Xmax. Если модель пытается уйти
               ниже нуля, значение ограничивается нулём: отрицательных показателей не существует.
             </p>
           </div>
@@ -279,7 +292,7 @@
             </div>
             <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-[11px] leading-relaxed text-blue-950">
               <b>Почему p₂ исключается:</b> у p₂ усилен положительный драйвер X₇ и ослаблена отрицательная
-              обратная связь, поэтому X₇ выходит за 1.00 и нарушает (3). Планы p₁ и p₃ остаются в коридоре;
+              обратная связь, поэтому X₇ выходит за верхнюю границу и нарушает (3). Планы p₁ и p₃ остаются в коридоре;
               сравниваются по Z — меньшему значению соответствует лучший план. В статье оптимум p₁ (Z = 1.6031).
               Конкретные уравнения для p₂/p₃ в статье не приведены, поэтому это демонстрационные сценарии,
               откалиброванные по Z(p₁) и Z(p₃).
@@ -339,13 +352,13 @@
           <div class="font-bold text-slate-800 mb-1">Система дифференциальных уравнений (2), (5), (6)</div>
           $$\frac{dX_i}{dt}=f_i\bigl(t,X_1,\dots,X_n,p(t)\bigr),\qquad X_i(t_0)=X_{i0}$$
           $$\frac{dX_i}{dt}=\frac{1}{X_i^{norm}}\Biggl(\prod_{j\in I_i^{+}}f_{i,j}(X_j)\sum_{m\in M_i^{+}}E_m-\prod_{k\in I_i^{-}}f_{i,k}(X_k)\sum_{n\in N_i^{-}}E_n\Biggr)$$
-          <p class="text-[11px] text-slate-500 mt-1">Xᵢ<sup>norm</sup> — коэффициент нормировки (в калькуляторе — поле «Коэффициент Xᵢⁿᵒʳᵐ»). Если для группы связей не задан ни один внешний фактор, множитель суммы равен 1 (нейтральный), а не 0 — иначе отрицательная обратная связь X₉ полностью исчезала.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Xᵢ<sup>norm</sup> — коэффициент нормировки (в калькуляторе 19.05). Если для группы связей не задан ни один внешний фактор, множитель суммы равен 1 (нейтральный), а не 0 — иначе отрицательная обратная связь X₉ полностью исчезала.</p>
         </div>
 
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
           <div class="font-bold text-slate-800 mb-1">Ограничения (3) и нормировка (8)</div>
           $$X_i^{\min}\le X_i(t,p(t))\le X_i^{\max},\qquad X_i^{*}(t)=\frac{X_i(t)}{X_i^{norm}}$$
-          <p class="text-[11px] text-slate-500 mt-1">В калькуляторе Xᵢ ∈ [0.25; 1.00]. Ограничение проверяется <b>после</b> интегрирования; внутри RK4 значения не «прибиваются» к границам, иначе решение искажается, а нарушение (3) маскируется.</p>
+          <p class="text-[11px] text-slate-500 mt-1">По умолчанию Xᵢ ∈ [0.25; 1.00]; цель X* и верхняя граница Xmax задаются в шапке. Ограничение проверяется <b>после</b> интегрирования; внутри RK4 значения не «прибиваются» к границам, иначе решение искажается, а нарушение (3) маскируется.</p>
         </div>
 
         <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
@@ -355,7 +368,7 @@
         </div>
 
         <div class="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-950">
-          <b>X* и допустимая область — разные вещи.</b> X* = 0.50 — цель; [0.25; 1.00] — коридор ограничения (3).
+          <b>X* и допустимая область — разные вещи.</b> X* (по умолчанию 0.50) — цель; [0.25; Xmax] — коридор ограничения (3).
           Поэтому значение 0.8 «выше нормы» (цели), но всё ещё допустимо. Статус «в допустимой области» не означает
           «достигнут норматив»; за отклонение от X* начисляется штраф Z. Нарушением считается только выход за
           границы коридора.

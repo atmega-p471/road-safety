@@ -159,6 +159,8 @@ let simulations = {};        // результаты по планам p1/p2/p3
 let lastSimulation = null;   // активный план
 let charts = {};
 let hiddenState = X_VARS.map((_, i) => ![0, 1, 2, 3].includes(i));
+let currentXStar = MODEL.X_STAR_DEFAULT;
+let currentXMax = MODEL.X_MAX;
 // Фон графика: зелёный допустимый коридор (3) и целевая линия X*.
 // Это визуально разделяет «допустимо» и «достигнута цель».
 const corridorPlugin = {
@@ -168,7 +170,7 @@ const corridorPlugin = {
     const y = chart.scales && chart.scales.y;
     if (!chartArea || !y) return;
 
-    const yMax = y.getPixelForValue(MODEL.X_MAX);
+    const yMax = y.getPixelForValue(currentXMax);
     const yMin = y.getPixelForValue(MODEL.X_MIN);
     const top = Math.max(chartArea.top, Math.min(yMax, yMin));
     const bottom = Math.min(chartArea.bottom, Math.max(yMax, yMin));
@@ -185,7 +187,7 @@ const corridorPlugin = {
     const y = chart.scales && chart.scales.y;
     if (!chartArea || !y) return;
 
-    const yMax = y.getPixelForValue(MODEL.X_MAX);
+    const yMax = y.getPixelForValue(currentXMax);
 
     ctx.save();
     ctx.font = '600 9px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -194,7 +196,7 @@ const corridorPlugin = {
 
     if (yMax >= chartArea.top && yMax <= chartArea.bottom) {
       ctx.fillStyle = 'rgba(5, 150, 105, 0.9)';
-      ctx.fillText('допустимая область (3): 0.25 … 1.00', chartArea.left + 7, yMax - 3);
+      ctx.fillText(`допустимая область (3): 0.25 … ${currentXMax.toFixed(2)}`, chartArea.left + 7, yMax - 3);
     }
     ctx.restore();
   }
@@ -449,12 +451,12 @@ function checkBounds(sim) {
   for (let i = 0; i < 13; i++) {
     for (const v of source[i]) {
       let over = 0;
-      if (v > MODEL.X_MAX + 1e-9) over = v - MODEL.X_MAX;
+      if (v > currentXMax + 1e-9) over = v - currentXMax;
       else if (v < MODEL.X_MIN - 1e-9) over = MODEL.X_MIN - v;
       if (over > 0) {
         count++;
         if (!worst || over > worst.over) {
-          worst = { i, v, over, high: v > MODEL.X_MAX };
+          worst = { i, v, over, high: v > currentXMax };
         }
       }
     }
@@ -563,9 +565,9 @@ function renderAllFormulasInline() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           ${E_FACTORS.map((e, idx) => `
             <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 font-mono text-xs">
-              <div class="font-bold text-slate-800 font-sans text-xs">${e.code}: ${e.name}</div>
+              <div class="font-bold text-slate-800 font-sans text-xs">E<sub>${e.id}</sub>: ${e.name}</div>
               <div class="flex items-center gap-1 flex-wrap bg-white p-2 rounded border border-slate-200">
-                <span class="text-blue-700 font-bold shrink-0">${e.code}(t)=</span>
+                <span class="text-blue-700 font-bold shrink-0">E<sub>${e.id}</sub>(t)=</span>
                 <input type="number" step="0.001" value="${e.d3}" oninput="updateECoeff(${idx}, 'd3', this.value)" class="w-14 h-7 text-center border rounded bg-blue-50/30 text-xs font-bold" title="d3 при t^3">t³+
                 <input type="number" step="0.01" value="${e.d2}" oninput="updateECoeff(${idx}, 'd2', this.value)" class="w-14 h-7 text-center border rounded bg-blue-50/30 text-xs font-bold" title="d2 при t^2">t²+
                 <input type="number" step="0.01" value="${e.d1}" oninput="updateECoeff(${idx}, 'd1', this.value)" class="w-14 h-7 text-center border rounded bg-blue-50/30 text-xs font-bold" title="d1 при t">t+
@@ -647,11 +649,17 @@ function resetDefaultCoeffs() {
 // ============================================================================
 function runAllCalculations() {
   const xStar = clamp(elValue('xStar', MODEL.X_STAR_DEFAULT), 0.05, 0.95);
+  const xMaxRaw = clamp(elValue('xMax', MODEL.X_MAX), 0.55, 2.0);
+  const xMax = Math.max(xMaxRaw, xStar + 0.05);
+  currentXStar = xStar;
+  currentXMax = xMax;
+  const corridorLabel = document.getElementById('corridorLimitLabel');
+  if (corridorLabel) corridorLabel.textContent = xMax.toFixed(2);
   const norm = clamp(elValue('normCoef', MODEL.NORM_DEFAULT), 1, 500);
 
   simulations = {};
   ['p1', 'p2', 'p3'].forEach(plan => {
-    const params = { plan, xStar, norm };
+    const params = { plan, xStar, xMax, norm };
     const sim = solveSystem(params);
     simulations[plan] = { params, sim, obj: computeObjective(sim, params) };
   });
@@ -725,10 +733,10 @@ function updateKPIs() {
     } else if (b.ok) {
       statusEl.textContent = 'В допустимой области (3)';
       statusEl.className = 'text-sm font-bold text-emerald-600 mt-2';
-      if (detailEl) detailEl.textContent = 'Xᵢ ∈ [0.25; 1.00] на всём горизонте; это выполнение ограничения, а не достижение цели X*';
+      if (detailEl) detailEl.textContent = `Xᵢ ∈ [0.25; ${currentXMax.toFixed(2)}] на всём горизонте; это выполнение ограничения, а не достижение цели X*`;
     } else {
       const code = X_VARS[b.i].code;
-      const limit = b.high ? '1.00' : '0.25';
+      const limit = b.high ? currentXMax.toFixed(2) : '0.25';
       statusEl.textContent = `Нарушение (3): ${code} = ${b.v.toFixed(2)} ${b.high ? '>' : '<'} ${limit}`;
       statusEl.className = 'text-sm font-bold text-rose-600 mt-2';
       if (detailEl) detailEl.textContent = `${X_VARS[b.i].name} — выход из коридора в ${b.count} точках расчётной сетки`;
@@ -770,7 +778,7 @@ function updatePlansUI() {
   if (card2) {
     card2.textContent = boundsP2.ok
       ? `План p₂ (формально допустим): Z = ${z.p2.toFixed(4)}`
-      : `План p₂ — исключён: X₇ = ${boundsP2.v.toFixed(2)} > 1.00 (Z = ${z.p2.toFixed(4)})`;
+      : `План p₂ — исключён: X₇ = ${boundsP2.v.toFixed(2)} > ${currentXMax.toFixed(2)} (Z = ${z.p2.toFixed(4)})`;
   }
 
   const card3 = document.getElementById('planCard3');
@@ -808,6 +816,8 @@ function selectPlanPreset(planId) {
 function resetDefaults() {
   const x = document.getElementById('xStar');
   if (x) x.value = MODEL.X_STAR_DEFAULT;
+  const xm = document.getElementById('xMax');
+  if (xm) xm.value = MODEL.X_MAX;
   const n = document.getElementById('normCoef');
   if (n) n.value = MODEL.NORM_DEFAULT;
   activePlan = 'p1';
@@ -953,18 +963,19 @@ function computeYRange(sim) {
   for (let i = 0; i < 13; i++) {
     if (!hiddenState[i]) vals.push(...src.series[i]);
   }
-  if (!vals.length) vals.push(MODEL.X_MIN, MODEL.X_MAX);
+  if (!vals.length) vals.push(MODEL.X_MIN, currentXMax);
 
   let lo = Math.min(...vals);
   let hi = Math.max(...vals);
+  const yCap = Math.max(1.4, currentXMax + 0.1);
 
   if (yZoomOn) {
     lo = Math.max(0, Math.floor(lo * 20) / 20);
-    hi = Math.min(1.4, Math.ceil(hi * 20) / 20);
-    if (hi - lo < 0.06) hi = Math.min(1.4, lo + 0.06);
+    hi = Math.min(yCap, Math.ceil(hi * 20) / 20);
+    if (hi - lo < 0.06) hi = Math.min(yCap, lo + 0.06);
   } else {
     lo = 0;
-    hi = Math.min(1.4, Math.max(1.10, Math.ceil((hi + 0.02) * 20) / 20));
+    hi = Math.min(yCap, Math.max(1.10, currentXMax + 0.05, Math.ceil((hi + 0.02) * 20) / 20));
   }
   return { lo, hi };
 }
@@ -1169,7 +1180,7 @@ const radarViolationPlugin = {
     meta.data.forEach((pt, i) => {
       const v = Number(values[i]);
       if (!Number.isFinite(v)) return;
-      if (v > MODEL.X_MAX + 1e-9 || v < MODEL.X_MIN - 1e-9) {
+      if (v > currentXMax + 1e-9 || v < MODEL.X_MIN - 1e-9) {
         ctx.beginPath();
         ctx.arc(pt.x, pt.y, 6.5, 0, Math.PI * 2);
         ctx.stroke();
@@ -1215,9 +1226,10 @@ function renderSingleRadar(canvasId, chartKey, tVal, sim) {
   const slice = radarSlice(sim, tVal);
   const values = slice.values;
   const xStar = lastSimulation.params.xStar;
+  const radarMax = Math.max(1.1, currentXMax + 0.1, Math.ceil(Math.max(...values) * 10) / 10 + 0.05);
 
   const data = {
-    labels: X_VARS.map(v => v.code),
+    labels: X_VARS.map(v => subscriptCode(v.code)),
     datasets: [
       {
         label: 'Xᵢ(t)',
@@ -1241,8 +1253,8 @@ function renderSingleRadar(canvasId, chartKey, tVal, sim) {
         backgroundColor: 'transparent'
       },
       {
-        label: 'Верхняя граница 1.00',
-        data: X_VARS.map(() => MODEL.X_MAX),
+        label: `Верхняя граница ${currentXMax.toFixed(2)}`,
+        data: X_VARS.map(() => currentXMax),
         borderColor: 'rgba(225,29,72,0.62)',
         borderDash: [2, 4],
         borderWidth: 1.3,
@@ -1276,16 +1288,16 @@ function renderSingleRadar(canvasId, chartKey, tVal, sim) {
         scales: {
           r: {
             min: 0,
-            max: Math.max(1.3, Math.ceil(Math.max(...values) * 10) / 10),
+            max: radarMax,
             grid: { circular: true, color: '#e2e8f0' },
             angleLines: { color: '#e2e8f0' },
             ticks: {
-              stepSize: 0.2,
+              stepSize: 0.1,
               font: { size: 8 },
               backdropColor: 'rgba(255,255,255,0.7)',
               color: '#94a3b8'
             },
-            pointLabels: { font: { size: 10, weight: '700' }, color: '#334155' }
+            pointLabels: { font: { size: 11, weight: '700' }, color: '#334155' }
           }
         }
       },
@@ -1295,8 +1307,8 @@ function renderSingleRadar(canvasId, chartKey, tVal, sim) {
     const ds = charts[chartKey].data.datasets;
     ds[0].data = values;
     ds[1].data = X_VARS.map(() => xStar);
-    ds[2].data = X_VARS.map(() => MODEL.X_MAX);
-    charts[chartKey].options.scales.r.max = Math.max(1.3, Math.ceil(Math.max(...values) * 10) / 10);
+    ds[2].data = X_VARS.map(() => currentXMax);
+    charts[chartKey].options.scales.r.max = radarMax;
     charts[chartKey].update('none');
   }
 }
@@ -1313,7 +1325,7 @@ function updateRadarTable(sim, t1, t2) {
     const v1 = a.values[i];
     const v2 = b.values[i];
     const dev = v2 - xStar;
-    const outside = v1 > MODEL.X_MAX + 1e-9 || v2 > MODEL.X_MAX + 1e-9 || v1 < MODEL.X_MIN - 1e-9 || v2 < MODEL.X_MIN - 1e-9;
+    const outside = v1 > currentXMax + 1e-9 || v2 > currentXMax + 1e-9 || v1 < MODEL.X_MIN - 1e-9 || v2 < MODEL.X_MIN - 1e-9;
     const far = !outside && dev > 0.2;
     const status = outside
       ? '<span class="text-rose-600 font-bold">нарушение (3)</span>'
@@ -1349,7 +1361,7 @@ function updateRadarTable(sim, t1, t2) {
     </table>
     <p class="text-[10px] text-slate-500 mt-1.5">
       «В коридоре, выше цели» — ограничение (3) выполнено, но Xᵢ заметно больше X*; такой план допустим,
-      но получает больший штраф Z. «Нарушение (3)» — выход за [0.25; 1.00].
+      но получает больший штраф Z. «Нарушение (3)» — выход за [0.25; ${currentXMax.toFixed(2)}].
     </p>`;
 }
 
