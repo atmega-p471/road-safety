@@ -159,6 +159,7 @@ let lastSimulation = null;   // активный план
 let charts = {};
 let hiddenState = X_VARS.map((_, i) => ![0, 1, 2, 3].includes(i));
 let chartMode = 'levels';
+let demoNonlinear = false;
 let currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
 let currentWeights = X_VARS.map(() => 1);
 let currentXMin = MODEL.X_MIN;
@@ -601,12 +602,14 @@ function updateFunc76Coeff(funcIdx, coeffName, val) {
   if (!item) return;
   const parsed = num(val, NaN);
   if (Number.isFinite(parsed)) item[coeffName] = parsed;
+  demoNonlinear = false;
   runAllCalculations();
 }
 
 function updateECoeff(eIdx, coeffName, val) {
   const parsed = num(val, NaN);
   if (Number.isFinite(parsed)) E_FACTORS[eIdx][coeffName] = parsed;
+  demoNonlinear = false;
   runAllCalculations();
 }
 
@@ -625,6 +628,7 @@ function jitterCoeff(base, absSpread) {
 // показатели уходили в минус и в десятки. Небольшой разброс позволяет менять
 // коэффициенты, но сохраняет правдоподобный масштаб решения.
 function fillRandomCoeffs() {
+  demoNonlinear = false;
   funcs76.forEach((f, i) => {
     const d = DEFAULT_F76[i];
     f.c0 = jitterCoeff(d.c0, 0.010);
@@ -644,9 +648,35 @@ function fillRandomCoeffs() {
   runAllCalculations();
 }
 
+function applyNonlinearDemo() {
+  funcs76 = JSON.parse(JSON.stringify(DEFAULT_F76));
+  E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
+  demoNonlinear = true;
+
+  // Демо-набор: у всех функций, кроме f49–f54 и f62–f64,
+  // уменьшаем квадратичный и кубический коэффициенты на 15%.
+  // Эти две группы оставляем исходными, чтобы X9 и X11 не выходили за 1.
+  const keepOriginal = new Set([48, 49, 50, 51, 52, 53, 61, 62, 63]);
+  funcs76.forEach((f, i) => {
+    if (!keepOriginal.has(i)) {
+      f.c2 = +(f.c2 * 0.85).toFixed(4);
+      f.c3 = +(f.c3 * 0.85).toFixed(4);
+    }
+  });
+
+  hiddenState = X_VARS.map(() => false);
+  chartMode = 'levels';
+  updateModeButtons();
+  activePlan = 'p1';
+  renderAllFormulasInline();
+  renderRegressionEditor(true);
+  runAllCalculations();
+}
+
 function resetDefaultCoeffs() {
   funcs76 = JSON.parse(JSON.stringify(DEFAULT_F76));
   E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
+  demoNonlinear = false;
   renderAllFormulasInline();
   renderRegressionEditor(true);
   renderTargetsEditor();
@@ -721,7 +751,7 @@ function updateKPIs() {
     const ref = REFERENCE_Z_VALUE[activePlan];
     const defaultTargets = params.targets.every(t => Math.abs(t - 0.5) < 1e-9);
     const defaultWeights = params.weights.every(w => Math.abs(w - 1) < 1e-9);
-    if (ref && defaultTargets && defaultWeights) {
+    if (ref && defaultTargets && defaultWeights && !demoNonlinear) {
       const d = obj.Z - ref;
       const pct = (d / ref) * 100;
       const zero = Math.abs(d) < 0.00005;
@@ -732,6 +762,9 @@ function updateKPIs() {
         ? `Δ к статье: 0.0000 — совпадает`
         : `Δ к статье: ${signedFixed(d)}${pctText} ${worse ? '— хуже' : '— лучше'}`;
       deltaEl.className = `text-[11px] font-semibold mt-1 ${worse ? 'text-rose-600' : better ? 'text-emerald-600' : 'text-slate-500'}`;
+    } else if (ref && demoNonlinear) {
+      deltaEl.textContent = 'Демо-режим нелинейности: сравнение Z со статьёй не проводится';
+      deltaEl.className = 'text-[11px] font-semibold mt-1 text-slate-500';
     } else if (ref) {
       deltaEl.textContent = `Цели/веса изменены — сравнение с Z статьи (${ref.toFixed(4)}) не проводится`;
       deltaEl.className = 'text-[11px] font-semibold mt-1 text-slate-500';
@@ -850,6 +883,7 @@ function selectPlanPreset(planId) {
 function resetDefaults() {
   currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
   currentWeights = X_VARS.map(() => 1);
+  demoNonlinear = false;
   currentXMin = MODEL.X_MIN;
   const xm = document.getElementById('xMax');
   if (xm) xm.value = MODEL.X_MAX;
@@ -2059,6 +2093,8 @@ window.addEventListener('DOMContentLoaded', () => {
   updateZoomButton();
   updateModeButtons();
   runAllCalculations();
+
+  if (new URLSearchParams(location.search).get('demo') === '1') applyNonlinearDemo();
 
   const tabParam = new URLSearchParams(location.search).get('tab');
   if (['dynamics', 'radar', 'regressions', 'correction', 'plans'].includes(tabParam)) {
