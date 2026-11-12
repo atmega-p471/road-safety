@@ -1892,10 +1892,10 @@ function renderTargetsEditor() {
       <span class="font-bold text-[10px] text-slate-700 w-6 shrink-0">${v.sub}</span>
       <input type="number" id="tgt_${i}" value="${currentTargets[i].toFixed(2)}" min="0.05" max="0.95" step="0.05"
         title="Цель X*${i + 1}"
-        class="w-12 h-6 px-1 text-center font-bold text-[10px] text-blue-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
+        class="w-14 h-6 px-1 text-center font-bold text-[10px] text-blue-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
       <input type="number" id="wgt_${i}" value="${currentWeights[i]}" min="0.1" max="10" step="0.5"
         title="Вес важности w${i + 1}"
-        class="w-9 h-6 px-1 text-center font-bold text-[10px] text-indigo-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
+        class="w-14 h-6 px-1 text-center font-bold text-[10px] text-indigo-700 border border-slate-300 rounded bg-slate-50 focus:bg-white">
     </div>`).join('');
 
   const g = document.getElementById('globalTarget');
