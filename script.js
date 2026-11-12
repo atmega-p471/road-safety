@@ -162,6 +162,7 @@ let chartMode = 'levels';
 let demoNonlinear = false;
 let currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
 let currentWeights = X_VARS.map(() => 1);
+let currentInitial = X_VARS.map(v => v.init);
 let currentXMin = MODEL.X_MIN;
 let currentXMax = MODEL.X_MAX;
 // Фон графика: зелёный допустимый коридор (3) и целевая линия X*.
@@ -343,7 +344,7 @@ function solveSystem(params) {
   const derivs = Array.from({ length: 13 }, () => []);
   let diverged = false;
 
-  let X = X_VARS.map(v => v.init);
+  let X = (params.initial || X_VARS.map(v => v.init)).map(v => clamp(v, 0, 1));
 
   for (let s = 0; s <= steps; s++) {
     const t = +(s * H).toFixed(6);
@@ -668,6 +669,43 @@ function applyNonlinearDemo() {
   chartMode = 'levels';
   updateModeButtons();
   activePlan = 'p1';
+  currentInitial = X_VARS.map(v => v.init);
+  renderInitialInputs();
+  renderAllFormulasInline();
+  renderRegressionEditor(true);
+  runAllCalculations();
+}
+
+function renderInitialInputs() {
+  const row = document.getElementById('initialValuesRow');
+  if (!row) return;
+
+  row.innerHTML = currentInitial.map((v, i) => `
+    <td class="p-1 ${i < 12 ? 'border-r border-slate-200' : ''}">
+      <input type="number" id="x0_${i}" value="${v.toFixed(2)}" min="0" max="1" step="0.01"
+        oninput="setInitialValue(${i}, this.value)"
+        class="w-12 h-7 px-0.5 text-center font-bold text-[10px] text-blue-700 border border-slate-300 rounded bg-white">
+    </td>`).join('');
+}
+
+function setInitialValue(idx, value) {
+  const parsed = num(value, NaN);
+  if (!Number.isFinite(parsed)) return;
+  currentInitial[idx] = clamp(parsed, 0, 1);
+  demoNonlinear = false;
+  runAllCalculations();
+}
+
+function applyInitialDemo() {
+  funcs76 = JSON.parse(JSON.stringify(DEFAULT_F76));
+  E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
+  currentInitial = [0.50, 0.84, 0.87, 0.52, 0.69, 0.91, 0.45, 0.54, 0.85, 0.75, 0.56, 0.80, 0.62];
+  demoNonlinear = true;
+  hiddenState = X_VARS.map(() => false);
+  chartMode = 'levels';
+  updateModeButtons();
+  activePlan = 'p1';
+  renderInitialInputs();
   renderAllFormulasInline();
   renderRegressionEditor(true);
   runAllCalculations();
@@ -677,6 +715,8 @@ function resetDefaultCoeffs() {
   funcs76 = JSON.parse(JSON.stringify(DEFAULT_F76));
   E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
   demoNonlinear = false;
+  currentInitial = X_VARS.map(v => v.init);
+  renderInitialInputs();
   renderAllFormulasInline();
   renderRegressionEditor(true);
   renderTargetsEditor();
@@ -714,6 +754,7 @@ function runAllCalculations() {
       plan,
       targets: currentTargets.slice(),
       weights: currentWeights.slice(),
+      initial: currentInitial.slice(),
       xMin,
       xMax,
       norm
@@ -883,6 +924,7 @@ function selectPlanPreset(planId) {
 function resetDefaults() {
   currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
   currentWeights = X_VARS.map(() => 1);
+  currentInitial = X_VARS.map(v => v.init);
   demoNonlinear = false;
   currentXMin = MODEL.X_MIN;
   const xm = document.getElementById('xMax');
@@ -900,6 +942,7 @@ function resetDefaults() {
 
   funcs76 = JSON.parse(JSON.stringify(DEFAULT_F76));
   E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
+  renderInitialInputs();
   renderAllFormulasInline();
   renderRegressionEditor(true);
   renderTargetsEditor();
@@ -2090,11 +2133,14 @@ window.addEventListener('DOMContentLoaded', () => {
   renderAllFormulasInline();
   renderRegressionEditor(true);
   renderTargetsEditor();
+  renderInitialInputs();
   updateZoomButton();
   updateModeButtons();
   runAllCalculations();
 
-  if (new URLSearchParams(location.search).get('demo') === '1') applyNonlinearDemo();
+  const demoParam = new URLSearchParams(location.search).get('demo');
+  if (demoParam === '1') applyNonlinearDemo();
+  else if (demoParam === 'x0') applyInitialDemo();
 
   const tabParam = new URLSearchParams(location.search).get('tab');
   if (['dynamics', 'radar', 'regressions', 'correction', 'plans'].includes(tabParam)) {

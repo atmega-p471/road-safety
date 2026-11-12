@@ -9,7 +9,7 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Стили -->
-  <link rel="stylesheet" href="style.css?v=20261109-9">
+  <link rel="stylesheet" href="style.css?v=20261109-10">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- MathJax -->
@@ -81,7 +81,8 @@
               <option value="13">Уравнение dX₁₃/dt (f₆₉–f₇₆)</option>
             </select>
             <button onclick="fillRandomCoeffs()" title="Случайный разброс ±4% вокруг калиброванных коэффициентов" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Случайно</button>
-            <button onclick="applyNonlinearDemo()" title="Демо: изогнутые кривые в пределах 0…1 без изменения E" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Демо-нелинейность</button>
+            <button onclick="applyNonlinearDemo()" title="Демо: изогнутые кривые за счёт коэффициентов f(x), в пределах 0…1" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Демо f(x)</button>
+            <button onclick="applyInitialDemo()" title="Демо: изогнутые кривые за счёт начальных X(0), функции не меняются" class="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Демо X(0)</button>
             <button onclick="resetDefaultCoeffs()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-300">Сброс</button>
           </div>
         </div>
@@ -158,21 +159,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr class="text-blue-700 font-bold bg-blue-50/40">
-                      <td class="p-1.5 border-r border-slate-200">0.89</td>
-                      <td class="p-1.5 border-r border-slate-200">1.00</td>
-                      <td class="p-1.5 border-r border-slate-200">0.86</td>
-                      <td class="p-1.5 border-r border-slate-200">1.00</td>
-                      <td class="p-1.5 border-r border-slate-200">0.95</td>
-                      <td class="p-1.5 border-r border-slate-200">0.87</td>
-                      <td class="p-1.5 border-r border-slate-200">0.84</td>
-                      <td class="p-1.5 border-r border-slate-200">1.00</td>
-                      <td class="p-1.5 border-r border-slate-200">1.00</td>
-                      <td class="p-1.5 border-r border-slate-200">0.95</td>
-                      <td class="p-1.5 border-r border-slate-200">1.00</td>
-                      <td class="p-1.5 border-r border-slate-200">0.95</td>
-                      <td class="p-1.5">0.62</td>
-                    </tr>
+                    <tr id="initialValuesRow" class="text-blue-700 font-bold bg-blue-50/40"></tr>
                   </tbody>
                 </table>
               </div>
@@ -455,7 +442,7 @@
     </div>
   </div>
 
-  <script src="script.js?v=20261109-9"></script>
+  <script src="script.js?v=20261109-10"></script>
 </body>
 </html>
 
