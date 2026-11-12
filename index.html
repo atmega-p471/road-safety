@@ -9,7 +9,7 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Стили -->
-  <link rel="stylesheet" href="style.css?v=20261109-5">
+  <link rel="stylesheet" href="style.css?v=20261109-6">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- MathJax -->
@@ -216,7 +216,10 @@
               <div class="flex items-center justify-between gap-2 flex-wrap">
                 <div>
                   <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Цели и веса (13)</div>
-                  <div class="text-[10px] text-slate-500">Xᵢ · цель X*ᵢ · вес wᵢ — настройка над лепестковыми графиками</div>
+                  <div class="text-[10px] text-slate-500">
+                    Xᵢ · <span class="font-semibold text-blue-700">1-е поле — цель X*ᵢ</span> ·
+                    <span class="font-semibold text-indigo-700">2-е — вес wᵢ</span> — настройка над лепестковыми графиками
+                  </div>
                 </div>
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <label class="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-blue-50 border border-blue-200">
@@ -233,9 +236,16 @@
                 </div>
               </div>
               <div id="targetsGrid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1.5"></div>
-              <p class="text-[10px] text-slate-500 leading-snug">
-                Вес 1 — как в статье; больше = важнее. Изменения применяются по кнопке «Применить».
-              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10px] leading-snug">
+                <div class="p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-950">
+                  <b>Цель X*ᵢ</b> — желаемый уровень показателя: 1.00 = базовый уровень, 0.50 = вдвое ниже.
+                  На радаре показана жёлтой пунктирной линией.
+                </div>
+                <div class="p-2 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-950">
+                  <b>Вес wᵢ</b> — важность показателя в Z: 1 = как в статье, 2 = вдвое важнее.
+                  На сами кривые Xᵢ(t) не влияет, только на оценку плана.
+                </div>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 gap-4">
@@ -439,7 +449,7 @@
     </div>
   </div>
 
-  <script src="script.js?v=20261109-5"></script>
+  <script src="script.js?v=20261109-6"></script>
 </body>
 </html>
 
