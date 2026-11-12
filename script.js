@@ -160,6 +160,7 @@ let charts = {};
 let hiddenState = X_VARS.map((_, i) => ![0, 1, 2, 3].includes(i));
 let chartMode = 'levels';
 let demoNonlinear = false;
+let sineDemo = false;
 let currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
 let currentWeights = X_VARS.map(() => 1);
 let currentInitial = X_VARS.map(v => v.init);
@@ -289,6 +290,10 @@ function computeDerivatives(t, X, params) {
 
     if (params.plan === 'p3') rate *= MODEL.P3_RATE;
 
+    if (params.sineAmp) {
+      rate += params.sineAmp * Math.sin(2 * Math.PI * (params.sineFreq || 2) * t + i * 0.7);
+    }
+
     out[i] = clamp(rate, -MODEL.DX_LIMIT, MODEL.DX_LIMIT);
   }
 
@@ -337,7 +342,7 @@ function buildDenseSeries(tArr, series, derivs, perStep) {
 // Внутри шага НЕТ принудительного clamp: ограничение (3) проверяется после
 // интегрирования. Иначе решение «прилипает» к границам и нарушение маскируется.
 function solveSystem(params) {
-  const H = MODEL.H;
+  const H = params.h || MODEL.H;
   const steps = Math.round(MODEL.T_MAX / H);
   const tArr = [];
   const series = Array.from({ length: 13 }, () => []);
@@ -376,7 +381,7 @@ function solveSystem(params) {
     });
   }
 
-  const dense = buildDenseSeries(tArr, series, derivs, MODEL.DENSE_PER_STEP);
+  const dense = buildDenseSeries(tArr, series, derivs, params.densePerStep || MODEL.DENSE_PER_STEP);
 
   return {
     tArr,
@@ -604,6 +609,7 @@ function updateFunc76Coeff(funcIdx, coeffName, val) {
   const parsed = num(val, NaN);
   if (Number.isFinite(parsed)) item[coeffName] = parsed;
   demoNonlinear = false;
+  sineDemo = false;
   runAllCalculations();
 }
 
@@ -630,6 +636,7 @@ function jitterCoeff(base, absSpread) {
 // коэффициенты, но сохраняет правдоподобный масштаб решения.
 function fillRandomCoeffs() {
   demoNonlinear = false;
+  sineDemo = false;
   funcs76.forEach((f, i) => {
     const d = DEFAULT_F76[i];
     f.c0 = jitterCoeff(d.c0, 0.010);
@@ -650,6 +657,7 @@ function fillRandomCoeffs() {
 }
 
 function applyNonlinearDemo() {
+  sineDemo = false;
   funcs76 = JSON.parse(JSON.stringify(DEFAULT_F76));
   E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
   demoNonlinear = true;
@@ -693,10 +701,12 @@ function setInitialValue(idx, value) {
   if (!Number.isFinite(parsed)) return;
   currentInitial[idx] = clamp(parsed, 0, 1);
   demoNonlinear = false;
+  sineDemo = false;
   runAllCalculations();
 }
 
 function applyInitialDemo() {
+  sineDemo = false;
   funcs76 = JSON.parse(JSON.stringify(DEFAULT_F76));
   E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
   currentInitial = [0.50, 0.84, 0.87, 0.52, 0.69, 0.91, 0.45, 0.54, 0.85, 0.75, 0.56, 0.80, 0.62];
@@ -711,7 +721,34 @@ function applyInitialDemo() {
   runAllCalculations();
 }
 
+function applySineDemo() {
+  funcs76 = JSON.parse(JSON.stringify(DEFAULT_F76));
+  E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
+  currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
+  currentWeights = X_VARS.map(() => 1);
+  currentInitial = Array(13).fill(0.5);
+  currentXMin = MODEL.X_MIN;
+  currentXMax = MODEL.X_MAX;
+  const xn = document.getElementById('xMin');
+  if (xn) xn.value = MODEL.X_MIN;
+  const xm = document.getElementById('xMax');
+  if (xm) xm.value = MODEL.X_MAX;
+
+  sineDemo = true;
+  demoNonlinear = true;
+  hiddenState = X_VARS.map(() => false);
+  chartMode = 'levels';
+  updateModeButtons();
+  activePlan = 'p1';
+  renderInitialInputs();
+  renderAllFormulasInline();
+  renderTargetsEditor();
+  renderRegressionEditor(true);
+  runAllCalculations();
+}
+
 function resetDefaultCoeffs() {
+  sineDemo = false;
   funcs76 = JSON.parse(JSON.stringify(DEFAULT_F76));
   E_FACTORS = JSON.parse(JSON.stringify(DEFAULT_E));
   demoNonlinear = false;
@@ -746,7 +783,7 @@ function runAllCalculations() {
   if (corridorLabel) corridorLabel.textContent = xMax.toFixed(2);
   const corridorMinLabel = document.getElementById('corridorMinLabel');
   if (corridorMinLabel) corridorMinLabel.textContent = xMin.toFixed(2);
-  const norm = clamp(elValue('normCoef', MODEL.NORM_DEFAULT), 1, 500);
+  const norm = sineDemo ? 80 : clamp(elValue('normCoef', MODEL.NORM_DEFAULT), 1, 500);
 
   simulations = {};
   ['p1', 'p2', 'p3'].forEach(plan => {
@@ -757,7 +794,11 @@ function runAllCalculations() {
       initial: currentInitial.slice(),
       xMin,
       xMax,
-      norm
+      norm,
+      h: sineDemo ? 0.005 : undefined,
+      densePerStep: sineDemo ? 8 : undefined,
+      sineAmp: sineDemo ? 0.2 : 0,
+      sineFreq: sineDemo ? 2 : 0
     };
     const sim = solveSystem(params);
     simulations[plan] = { params, sim, obj: computeObjective(sim, params) };
@@ -804,7 +845,9 @@ function updateKPIs() {
         : `Δ к статье: ${signedFixed(d)}${pctText} ${worse ? '— хуже' : '— лучше'}`;
       deltaEl.className = `text-[11px] font-semibold mt-1 ${worse ? 'text-rose-600' : better ? 'text-emerald-600' : 'text-slate-500'}`;
     } else if (ref && demoNonlinear) {
-      deltaEl.textContent = 'Демо-режим нелинейности: сравнение Z со статьёй не проводится';
+      deltaEl.textContent = sineDemo
+        ? 'Демо-синус: периодическое воздействие, сравнение Z со статьёй не проводится'
+        : 'Демо-режим нелинейности: сравнение Z со статьёй не проводится';
       deltaEl.className = 'text-[11px] font-semibold mt-1 text-slate-500';
     } else if (ref) {
       deltaEl.textContent = `Цели/веса изменены — сравнение с Z статьи (${ref.toFixed(4)}) не проводится`;
@@ -922,6 +965,7 @@ function selectPlanPreset(planId) {
 }
 
 function resetDefaults() {
+  sineDemo = false;
   currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
   currentWeights = X_VARS.map(() => 1);
   currentInitial = X_VARS.map(v => v.init);
@@ -1202,7 +1246,7 @@ function updateDynamicsChart() {
             },
             title: {
               display: true,
-              text: 'Безразмерное время t (горизонт 11 мес., шаг h = 0.125)',
+              text: sineDemo ? 'Безразмерное время t (демо-синус)' : 'Безразмерное время t (горизонт 11 мес., шаг h = 0.125)',
               font: { size: 12, weight: 'bold' },
               color: '#334155'
             }
@@ -1241,6 +1285,8 @@ function updateDynamicsChart() {
       (value) => ((isResidual || zoomed) ? Number(value).toFixed(2) : Number(value).toFixed(1));
     charts.dynamics.options.scales.y.title.text =
       isResidual ? 'Отклонение от прямой, % X' : 'Нормированный уровень Xᵢ(t)';
+    charts.dynamics.options.scales.x.title.text =
+      sineDemo ? 'Безразмерное время t (демо-синус)' : 'Безразмерное время t (горизонт 11 мес., шаг h = 0.125)';
     charts.dynamics.update('none');
   }
   charts.dynamics.$mode = chartMode;
@@ -1248,7 +1294,12 @@ function updateDynamicsChart() {
   const corridorLegend = document.getElementById('corridorLegend');
   if (corridorLegend) corridorLegend.style.display = isResidual ? 'none' : '';
   const dynamicsCaption = document.getElementById('dynamicsCaption');
-  if (dynamicsCaption) dynamicsCaption.style.display = isResidual ? 'none' : '';
+  if (dynamicsCaption) {
+    dynamicsCaption.style.display = isResidual ? 'none' : '';
+    dynamicsCaption.textContent = sineDemo
+      ? 'Демо-синус: к правой части добавлено периодическое воздействие 0.2·sin(2π·2t + φᵢ), шаг 0.005. Это демонстрация, а не данные статьи. Кривые остаются в 0…1.'
+      : 'Рис. 8. Безразмерное время t ∈ [0; 1], горизонт 11 месяцев, шаг h = 0.125, RK4. Кривые построены по 129 точкам. Допустимая область Xᵢ ∈ [Xmin; Xmax] контролируется в блоке «Статус ограничений»; границы Xmin/Xmax задаются в строке параметров.';
+  }
 
   renderChipsUI();
 }
@@ -2141,6 +2192,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const demoParam = new URLSearchParams(location.search).get('demo');
   if (demoParam === '1') applyNonlinearDemo();
   else if (demoParam === 'x0') applyInitialDemo();
+  else if (demoParam === 'sine') applySineDemo();
 
   const tabParam = new URLSearchParams(location.search).get('tab');
   if (['dynamics', 'radar', 'regressions', 'correction', 'plans'].includes(tabParam)) {
