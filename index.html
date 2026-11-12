@@ -9,7 +9,7 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Стили -->
-  <link rel="stylesheet" href="style.css?v=20261109-7">
+  <link rel="stylesheet" href="style.css?v=20261109-8">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- MathJax -->
@@ -181,6 +181,10 @@
               <div class="flex items-center justify-between gap-2 flex-wrap">
                 <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Показать на графике:</span>
                 <div class="flex items-center gap-1.5 flex-wrap">
+                  <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden">
+                    <button id="btnModeLevels" onclick="setChartMode('levels')" class="px-2.5 py-1 text-[11px] font-semibold bg-blue-600 text-white">Уровни</button>
+                    <button id="btnModeResidual" onclick="setChartMode('residual')" class="px-2.5 py-1 text-[11px] font-semibold bg-white hover:bg-slate-50 text-slate-700">Отклонение, %</button>
+                  </div>
                   <button onclick="setAllIndicators(true)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">Все</button>
                   <button onclick="setAllIndicators(false)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">Ничего</button>
                   <button onclick="toggleYZoom()" id="btnYZoom" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-blue-50 text-blue-700 transition">
@@ -190,7 +194,8 @@
               </div>
               <div id="indicatorsChipsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-1"></div>
               <p class="text-[10px] text-slate-500 leading-snug">
-                Выберите один или несколько показателей — ось Y сузится, и изгиб будет видно лучше.
+                Выберите один или несколько показателей — ось Y сузится. Режим «Отклонение, %» показывает
+                разность между Xᵢ(t) и прямой, соединяющей начало и конец: если бы кривая была линейной, все линии лежали бы на нуле.
               </p>
             </div>
 
@@ -198,11 +203,11 @@
               <canvas id="dynamicsChart"></canvas>
             </div>
 
-            <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900">
+            <div id="corridorLegend" class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900">
               <b>Зелёная полоса</b> — допустимый коридор (3): Xᵢ ∈ [<span id="corridorMinLabel">0.25</span>; <span id="corridorLimitLabel">1.00</span>].
             </div>
 
-            <p class="text-[11px] text-slate-500 leading-snug">
+            <p id="dynamicsCaption" class="text-[11px] text-slate-500 leading-snug">
               Рис. 8. Безразмерное время t ∈ [0; 1], горизонт 11 месяцев, шаг h = 0.125, RK4.
               Кривые построены по 129 точкам. Допустимая область Xᵢ ∈ [Xmin; Xmax] контролируется
               в блоке «Статус ограничений»; границы Xmin/Xmax задаются в строке параметров.
@@ -449,7 +454,7 @@
     </div>
   </div>
 
-  <script src="script.js?v=20261109-7"></script>
+  <script src="script.js?v=20261109-8"></script>
 </body>
 </html>
 

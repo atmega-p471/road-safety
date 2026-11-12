@@ -158,6 +158,7 @@ let simulations = {};        // результаты по планам p1/p2/p3
 let lastSimulation = null;   // активный план
 let charts = {};
 let hiddenState = X_VARS.map((_, i) => ![0, 1, 2, 3].includes(i));
+let chartMode = 'levels';
 let currentTargets = X_VARS.map(() => MODEL.X_STAR_DEFAULT);
 let currentWeights = X_VARS.map(() => 1);
 let currentXMin = MODEL.X_MIN;
@@ -167,6 +168,7 @@ let currentXMax = MODEL.X_MAX;
 const corridorPlugin = {
   id: 'corridor',
   beforeDatasetsDraw(chart) {
+    if ((chart.$mode ?? chartMode) === 'residual') return;
     const { ctx, chartArea } = chart;
     const y = chart.scales && chart.scales.y;
     if (!chartArea || !y) return;
@@ -184,6 +186,7 @@ const corridorPlugin = {
     }
   },
   afterDatasetsDraw(chart) {
+    if ((chart.$mode ?? chartMode) === 'residual') return;
     const { ctx, chartArea } = chart;
     const y = chart.scales && chart.scales.y;
     if (!chartArea || !y) return;
@@ -882,6 +885,7 @@ function subscriptCode(code) {
 const endLabelsPlugin = {
   id: 'endLabels',
   afterDatasetsDraw(chart) {
+    if ((chart.$mode ?? chartMode) === 'residual') return;
     const area = chart.chartArea;
     if (!area) return;
 
@@ -963,25 +967,40 @@ const endLabelsPlugin = {
 
 function buildDynamicsDatasets(sim) {
   const src = sim.dense || { tArr: sim.tArr, series: sim.series };
+  const isResidual = chartMode === 'residual';
+  const denom = Math.max(1, src.tArr.length - 1);
 
-  return X_VARS.map((v, i) => ({
-    label: `${subscriptCode(v.code)} · ${v.name}`,
-    data: src.series[i].map((y, k) => ({ x: src.tArr[k], y })),
-    parsing: false,
-    borderColor: v.color,
-    backgroundColor: v.color,
-    borderWidth: 2.6,
-    // Точки в узлах не рисуем: белые маркеры создавали иллюзию
-    // пунктирной/ломаной линии и мешали видеть изгиб.
-    cubicInterpolationMode: 'monotone',
-    tension: 0,
-    pointRadius: 0,
-    pointHoverRadius: 4,
-    pointBackgroundColor: v.color,
-    pointBorderColor: v.color,
-    pointBorderWidth: 0,
-    hidden: hiddenState[i]
-  }));
+  return X_VARS.map((v, i) => {
+    const arr = src.series[i];
+    const y0 = arr[0];
+    const y1 = arr[arr.length - 1];
+    const data = arr.map((y, k) => {
+      if (!isResidual) return { x: src.tArr[k], y };
+      const u = k / denom;
+      const line = y0 + (y1 - y0) * u;
+      return { x: src.tArr[k], y: (y - line) * 100 };
+    });
+
+    return {
+      label: `${subscriptCode(v.code)} · ${v.name}`,
+      data,
+      $endValue: y1,
+      parsing: false,
+      borderColor: v.color,
+      backgroundColor: v.color,
+      borderWidth: 2.6,
+      // Точки в узлах не рисуем: белые маркеры создавали иллюзию
+      // пунктирной/ломаной линии и мешали видеть изгиб.
+      cubicInterpolationMode: 'monotone',
+      tension: 0,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      pointBackgroundColor: v.color,
+      pointBorderColor: v.color,
+      pointBorderWidth: 0,
+      hidden: hiddenState[i]
+    };
+  });
 }
 
 function niceYStep(range) {
@@ -993,6 +1012,26 @@ function niceYStep(range) {
 }
 
 function computeYRange(sim) {
+  if (chartMode === 'residual') {
+    const src = sim.dense || sim;
+    const denom = Math.max(1, src.tArr.length - 1);
+    const vals = [0];
+    for (let i = 0; i < 13; i++) {
+      if (hiddenState[i]) continue;
+      const arr = src.series[i];
+      const y0 = arr[0];
+      const y1 = arr[arr.length - 1];
+      for (let k = 0; k < arr.length; k++) {
+        const line = y0 + (y1 - y0) * (k / denom);
+        vals.push((arr[k] - line) * 100);
+      }
+    }
+    let lo = Math.min(...vals);
+    let hi = Math.max(...vals);
+    const pad = Math.max(0.1, (hi - lo) * 0.18);
+    return { lo: lo - pad, hi: hi + pad };
+  }
+
   const src = sim.dense || sim;
   const vals = [];
   for (let i = 0; i < 13; i++) {
@@ -1022,6 +1061,7 @@ function updateDynamicsChart() {
   if (!canvas) return;
 
   const datasets = buildDynamicsDatasets(sim);
+  const isResidual = chartMode === 'residual';
   const { lo, hi } = computeYRange(sim);
   const zoomed = yZoomOn;
   const yStep = niceYStep(hi - lo);
@@ -1048,9 +1088,19 @@ function updateDynamicsChart() {
             itemSort: (a, b) => b.parsed.y - a.parsed.y,
             callbacks: {
               title: (items) => `Машинное время t = ${Number(items[0].parsed.x).toFixed(3)}`,
-              label: (item) => `${item.dataset.label}: ${item.parsed.y.toFixed(3)}`,
+              label: (item) => {
+                const mode = charts.dynamics?.$mode || chartMode;
+                if (mode === 'residual') {
+                  return `${item.dataset.label}: ${item.parsed.y >= 0 ? '+' : ''}${item.parsed.y.toFixed(3)}%`;
+                }
+                return `${item.dataset.label}: ${item.parsed.y.toFixed(3)}`;
+              },
               footer: (items) => {
                 if (!items.length) return '';
+                const mode = charts.dynamics?.$mode || chartMode;
+                if (mode === 'residual') {
+                  return 'Отклонение от прямой, %; 0 = идеально линейно';
+                }
                 const v = items[0].parsed.y;
                 const target = lastSimulation?.params?.targets?.[items[0].datasetIndex] ?? MODEL.X_STAR_DEFAULT;
                 return `X* = ${target.toFixed(2)}; отклонение ${v - target >= 0 ? '+' : ''}${(v - target).toFixed(3)}`;
@@ -1092,11 +1142,11 @@ function updateDynamicsChart() {
               stepSize: yStep,
               font: { size: 11, weight: '500' },
               color: '#64748b',
-              callback: (value) => (zoomed ? Number(value).toFixed(2) : Number(value).toFixed(1))
+              callback: (value) => ((isResidual || zoomed) ? Number(value).toFixed(2) : Number(value).toFixed(1))
             },
             title: {
               display: true,
-              text: 'Нормированный уровень Xᵢ(t)',
+              text: isResidual ? 'Отклонение от прямой, % X' : 'Нормированный уровень Xᵢ(t)',
               font: { size: 12, weight: '600' }
             }
           }
@@ -1105,14 +1155,23 @@ function updateDynamicsChart() {
       plugins: [endLabelsPlugin, corridorPlugin]
     });
   } else {
+    charts.dynamics.$mode = chartMode;
     charts.dynamics.data.datasets = datasets;
     charts.dynamics.options.scales.y.min = lo;
     charts.dynamics.options.scales.y.max = hi;
     charts.dynamics.options.scales.y.ticks.stepSize = yStep;
     charts.dynamics.options.scales.y.ticks.callback =
-      (value) => (zoomed ? Number(value).toFixed(2) : Number(value).toFixed(1));
+      (value) => ((isResidual || zoomed) ? Number(value).toFixed(2) : Number(value).toFixed(1));
+    charts.dynamics.options.scales.y.title.text =
+      isResidual ? 'Отклонение от прямой, % X' : 'Нормированный уровень Xᵢ(t)';
     charts.dynamics.update('none');
   }
+  charts.dynamics.$mode = chartMode;
+
+  const corridorLegend = document.getElementById('corridorLegend');
+  if (corridorLegend) corridorLegend.style.display = isResidual ? 'none' : '';
+  const dynamicsCaption = document.getElementById('dynamicsCaption');
+  if (dynamicsCaption) dynamicsCaption.style.display = isResidual ? 'none' : '';
 
   renderChipsUI();
 }
@@ -1157,6 +1216,25 @@ function updateZoomButton() {
 function toggleYZoom() {
   yZoomOn = !yZoomOn;
   updateZoomButton();
+  updateDynamicsChart();
+}
+
+function updateModeButtons() {
+  const levels = document.getElementById('btnModeLevels');
+  const residual = document.getElementById('btnModeResidual');
+  if (levels) {
+    levels.className = 'px-2.5 py-1 text-[11px] font-semibold ' +
+      (chartMode === 'levels' ? 'bg-blue-600 text-white' : 'bg-white hover:bg-slate-50 text-slate-700');
+  }
+  if (residual) {
+    residual.className = 'px-2.5 py-1 text-[11px] font-semibold ' +
+      (chartMode === 'residual' ? 'bg-blue-600 text-white' : 'bg-white hover:bg-slate-50 text-slate-700');
+  }
+}
+
+function setChartMode(mode) {
+  chartMode = mode === 'residual' ? 'residual' : 'levels';
+  updateModeButtons();
   updateDynamicsChart();
 }
 
@@ -1979,6 +2057,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderRegressionEditor(true);
   renderTargetsEditor();
   updateZoomButton();
+  updateModeButtons();
   runAllCalculations();
 
   const tabParam = new URLSearchParams(location.search).get('tab');
