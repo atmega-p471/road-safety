@@ -254,6 +254,23 @@ function evalE(e, t) {
 // План p2: ослабляем именно отрицательную обратную связь X7, а не добавляем
 // к темпу постоянное слагаемое (иначе знак производной мог перевернуться).
 // План p3: снижаем общую интенсивность мероприятий.
+/**
+ * Правая часть системы ОДУ: dX_i/dt = F_i(t, X).
+ *
+ * ВХОД:
+ *   t      — текущее машинное время (0…1);
+ *   X      — вектор состояния из 13 чисел: [X1, X2, ..., X13];
+ *   params — параметры расчёта:
+ *            plan        — 'p1' | 'p2' | 'p3';
+ *            norm        — нормировочный коэффициент (по умолчанию 19.05);
+ *            sineAmp     — амплитуда демо-воздействия (0 в обычном расчёте);
+ *            sineFreq    — частота демо-воздействия.
+ *
+ * ВЫХОД:
+ *   массив из 13 чисел — производные [dX1/dt, ..., dX13/dt].
+ *
+ * Сами f_i берутся из funcs76, E_i — из E_FACTORS, связи — из EQ_LINKS.
+ */
 function computeDerivatives(t, X, params) {
   const E = E_FACTORS.map(e => evalE(e, t));
   const out = new Array(13);
@@ -339,12 +356,31 @@ function buildDenseSeries(tArr, series, derivs, perStep) {
 }
 
 // Метод Рунге-Кутты 4-го порядка, t = 0 ... 1 с шагом h = 0.125.
-// Внутри шага НЕТ принудительного clamp: ограничение (3) проверяется после
-// интегрирования. Иначе решение «прилипает» к границам и нарушение маскируется.
+
+/**
+ * Решение системы ОДУ методом Рунге–Кутты 4-го порядка.
+ *
+ * ВХОД params:
+ *   initial[13] — начальные условия X1(0)…X13(0);
+ *   h           — шаг интегрирования (по умолчанию MODEL.H = 0.125);
+ *   densePerStep— число точек Эрмита между узлами RK4;
+ *   plan        — 'p1' | 'p2' | 'p3';
+ *   norm        — нормировочный коэффициент;
+ *   sineAmp     — амплитуда периодического демо-воздействия (0 = выключено).
+ *
+ * ВЫХОД:
+ *   tArr       — время в узлах RK4 (по умолчанию 9 значений: 0, 0.125, …, 1);
+ *   series     — 13 массивов значений X_i в узлах;
+ *   derivs     — 13 массивов производных dX_i/dt в узлах;
+ *   dense      — сгущённые кривые для графика (tArr + 13 рядов);
+ *   diverged   — признак расходимости;
+ *   fittedPolys— квадратичные аппроксимации X_i(t) для расчёта Z.
+ */
 function solveSystem(params) {
   const H = params.h || MODEL.H;
   const steps = Math.round(MODEL.T_MAX / H);
   const tArr = [];
+  // series[i][s] — значение Xi в узле s; derivs[i][s] — dXi/dt в узле s.
   const series = Array.from({ length: 13 }, () => []);
   const derivs = Array.from({ length: 13 }, () => []);
   let diverged = false;
@@ -356,19 +392,24 @@ function solveSystem(params) {
     tArr.push(t);
     for (let i = 0; i < 13; i++) series[i].push(X[i]);
 
+    // k1 — производные в начале шага.
     const k1 = computeDerivatives(t, X, params);
     for (let i = 0; i < 13; i++) derivs[i].push(k1[i]);
     if (s === steps) break;
 
+    // k2 — производные в середине шага (по k1).
     const X2 = X.map((v, i) => v + 0.5 * H * k1[i]);
     const k2 = computeDerivatives(t + 0.5 * H, X2, params);
 
+    // k3 — производные в середине шага (по k2).
     const X3 = X.map((v, i) => v + 0.5 * H * k2[i]);
     const k3 = computeDerivatives(t + 0.5 * H, X3, params);
 
+    // k4 — производные в конце шага (по k3).
     const X4 = X.map((v, i) => v + H * k3[i]);
     const k4 = computeDerivatives(t + H, X4, params);
 
+    // Взвешенное среднее четырёх стадий — значение на следующем узле.
     X = X.map((v, i) => v + (H / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
     if (X.some(v => !Number.isFinite(v) || Math.abs(v) > 20)) diverged = true;
 
@@ -381,6 +422,7 @@ function solveSystem(params) {
     });
   }
 
+  // Сгущаем решение кубическим Эрмитом: узлов 9, точек для графика — 129.
   const dense = buildDenseSeries(tArr, series, derivs, params.densePerStep || MODEL.DENSE_PER_STEP);
 
   return {
@@ -787,6 +829,8 @@ function runAllCalculations() {
 
   simulations = {};
   ['p1', 'p2', 'p3'].forEach(plan => {
+    // Полный набор входных данных для RK4:
+    // plan — сценарий, initial — X(0), h — шаг, norm — нормировка.
     const params = {
       plan,
       targets: currentTargets.slice(),
