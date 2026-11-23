@@ -1079,19 +1079,14 @@ const endLabelsPlugin = {
 
 function buildDynamicsDatasets(sim) {
   const src = sim.dense || { tArr: sim.tArr, series: sim.series };
-  const isResidual = chartMode === 'residual';
-  const denom = Math.max(1, src.tArr.length - 1);
 
   return X_VARS.map((v, i) => {
     const arr = src.series[i];
-    const y0 = arr[0];
     const y1 = arr[arr.length - 1];
-    const data = arr.map((y, k) => {
-      if (!isResidual) return { x: src.tArr[k], y };
-      const u = k / denom;
-      const line = y0 + (y1 - y0) * u;
-      return { x: src.tArr[k], y: (y - line) * 100 };
-    });
+    const data = arr.map((y, k) => ({
+      x: src.tArr[k],
+      y: Math.max(0, y)
+    }));
 
     return {
       label: `${subscriptCode(v.code)} · ${v.name}`,
@@ -1379,9 +1374,6 @@ function updateActiveTabChart(tabId) {
   }
   if (tabId === 'tab_dynamics') updateDynamicsChart();
   else if (tabId === 'tab_radar') updateRadarCharts();
-  else if (tabId === 'tab_regressions') updateRegressionChart();
-  else if (tabId === 'tab_correction') updateCorrectionCharts();
-  else if (tabId === 'tab_plans') updatePlansBarChart();
 }
 
 function showChartLoadError() {
@@ -2177,16 +2169,10 @@ window.addEventListener('DOMContentLoaded', () => {
   renderTargetsEditor();
   renderInitialInputs();
   updateZoomButton();
-  updateModeButtons();
   runAllCalculations();
 
-  const demoParam = new URLSearchParams(location.search).get('demo');
-  if (demoParam === '1') applyNonlinearDemo();
-  else if (demoParam === 'x0') applyInitialDemo();
-  else if (demoParam === 'sine') applySineDemo();
-
   const tabParam = new URLSearchParams(location.search).get('tab');
-  if (['dynamics', 'radar', 'regressions', 'correction', 'plans'].includes(tabParam)) {
+  if (['dynamics', 'radar'].includes(tabParam)) {
     switchTab(`tab_${tabParam}`);
   }
 });

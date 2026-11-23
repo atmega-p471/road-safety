@@ -9,7 +9,7 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Стили -->
-  <link rel="stylesheet" href="style.css?v=20261109-13">
+  <link rel="stylesheet" href="style.css?v=20261109-14">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- MathJax -->
@@ -81,9 +81,6 @@
               <option value="13">Уравнение dX₁₃/dt (f₆₉–f₇₆)</option>
             </select>
             <button onclick="fillRandomCoeffs()" title="Случайные значения для всех 76 функций и 6 внешних факторов" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Случайно</button>
-            <button onclick="applyNonlinearDemo()" title="Демо: изогнутые кривые за счёт коэффициентов f(x), в пределах 0…1" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Демо f(x)</button>
-            <button onclick="applyInitialDemo()" title="Демо: изогнутые кривые за счёт начальных X(0), функции не меняются" class="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Демо X(0)</button>
-            <button onclick="applySineDemo()" title="Демо: периодическое воздействие, кривые в стиле синусоид, 0…1" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-white text-xs font-semibold rounded-lg transition shadow-xs">Демо-синус</button>
             <button onclick="resetDefaultCoeffs()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-300">Сброс</button>
           </div>
         </div>
@@ -103,15 +100,6 @@
           </button>
           <button onclick="switchTab('tab_radar')" id="btn_tab_radar" class="tab-btn px-3.5 py-2 text-xs font-medium rounded-t-lg whitespace-nowrap transition">
             2. Радар
-          </button>
-          <button onclick="switchTab('tab_regressions')" id="btn_tab_regressions" class="tab-btn px-3.5 py-2 text-xs font-medium rounded-t-lg whitespace-nowrap transition">
-            3. Регрессии
-          </button>
-          <button onclick="switchTab('tab_correction')" id="btn_tab_correction" class="tab-btn px-3.5 py-2 text-xs font-medium rounded-t-lg whitespace-nowrap transition">
-            4. Коррекция
-          </button>
-          <button onclick="switchTab('tab_plans')" id="btn_tab_plans" class="tab-btn px-3.5 py-2 text-xs font-medium rounded-t-lg whitespace-nowrap transition">
-            5. Планы
           </button>
         </div>
 
@@ -170,10 +158,6 @@
               <div class="flex items-center justify-between gap-2 flex-wrap">
                 <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Показать на графике:</span>
                 <div class="flex items-center gap-1.5 flex-wrap">
-                  <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden">
-                    <button id="btnModeLevels" onclick="setChartMode('levels')" class="px-2.5 py-1 text-[11px] font-semibold bg-blue-600 text-white">Уровни</button>
-                    <button id="btnModeResidual" onclick="setChartMode('residual')" class="px-2.5 py-1 text-[11px] font-semibold bg-white hover:bg-slate-50 text-slate-700">Отклонение, %</button>
-                  </div>
                   <button onclick="setAllIndicators(true)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">Все</button>
                   <button onclick="setAllIndicators(false)" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700">Ничего</button>
                   <button onclick="toggleYZoom()" id="btnYZoom" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white hover:bg-blue-50 text-blue-700 transition">
@@ -183,8 +167,7 @@
               </div>
               <div id="indicatorsChipsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-1"></div>
               <p class="text-[10px] text-slate-500 leading-snug">
-                Выберите один или несколько показателей — ось Y сузится. Режим «Отклонение, %» показывает
-                разность между Xᵢ(t) и прямой, соединяющей начало и конец: если бы кривая была линейной, все линии лежали бы на нуле.
+                Выберите один или несколько показателей — ось Y сузится, и изгиб кривых будет видно лучше.
               </p>
             </div>
 
@@ -237,7 +220,7 @@
                 </div>
                 <div class="p-2 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-950">
                   <b>Вес wᵢ</b> — важность показателя в Z: 1 = как в статье, 2 = вдвое важнее.
-                  На сами кривые Xᵢ(t) не влияет, только на оценку плана.
+                  На сами кривые Xᵢ(t) не влияет, только на оценку Z.
                 </div>
               </div>
             </div>
@@ -270,70 +253,6 @@
               жёлтая пунктирная линия — цели X*ᵢ; красная — верхняя граница Xmax. Если модель пытается уйти
               ниже нуля, значение ограничивается нулём: отрицательных показателей не существует.
             </p>
-          </div>
-
-          <!-- Вкладка 3: Регрессии -->
-          <div id="tab_regressions" class="tab-content hidden space-y-4">
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Выберите функцию f(X):</label>
-              <select id="regSelect" onchange="updateRegressionChart()" class="p-2 text-xs border border-slate-300 rounded-lg bg-slate-50 font-medium w-full">
-                <option value="f1_7">f₁(X₇): вклад нарушений ПДД в dX₁/dt</option>
-                <option value="f1_8">f₂(X₈): вклад нетрезвых водителей в dX₁/dt</option>
-                <option value="f1_9">f₃(X₉): вклад пешеходов в dX₁/dt</option>
-                <option value="f2_4">f₇(X₄): вклад тяжести последствий в dX₂/dt</option>
-              </select>
-            </div>
-
-            <!-- Редактор коэффициентов прямо в уравнении, как в блоке функций слева -->
-            <div id="regEquationEditor"></div>
-
-            <div class="chart-wrapper-md"><canvas id="regressionChart"></canvas></div>
-            <p class="text-[11px] text-slate-500 leading-snug">
-              Коэффициенты вводятся прямо в уравнение — в окна рядом с X³, X², X и свободным членом,
-              так же как в блоке функций слева. Кривая — точный кубический полином f(X) без «натяжения» сплайна,
-              поэтому её изгиб и положение экстремума видны. Маркер ◆ — экстремум в рабочем диапазоне X ∈ [0.5; 1.0].
-            </p>
-          </div>
-
-          <!-- Вкладка 4: Коррекция -->
-          <div id="tab_correction" class="tab-content hidden space-y-4">
-            <div class="text-xs text-slate-600">Верификация расчётных данных со статистикой ГИБДД МВД (Раздел 4.1). Порог коррекции: <span id="val_corrThreshold" class="font-bold text-blue-600">10</span>%</div>
-            <input type="range" id="corrThreshold" value="10" min="2" max="25" step="1" oninput="document.getElementById('val_corrThreshold').textContent=this.value; updateCorrectionCharts();" class="w-full custom-slider">
-            <div class="p-4 bg-slate-50 rounded-xl border">
-              <h4 class="text-xs font-bold text-slate-600 mb-2">Рис. 10 — Коррекция переменной X₄ (демонстрационный ряд 2015–2021)</h4>
-              <div class="chart-wrapper-sm chart-wrapper-correction"><canvas id="correctionChartX4"></canvas></div>
-              <div id="corrLogBox" class="mt-3 text-xs text-slate-600"></div>
-            </div>
-            <p class="text-[11px] text-slate-500 leading-snug">
-              В статье для X₄ используется ряд 2004–2020 гг., а для X₈/X₁₂ — 2015–2021 гг. (рис. 9–10).
-              Здесь показан демонстрационный ряд 2015–2021: важна логика порога, а не абсолютные значения.
-              Голубая полоса — допустимое отклонение ±порог вокруг статистики; красные точки — годы, где модель
-              вышла за порог и была заменена статистикой.
-            </p>
-          </div>
-
-          <!-- Вкладка 5: Планы -->
-          <div id="tab_plans" class="tab-content hidden space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-              <div class="p-4 bg-slate-50 rounded-xl border"><div class="chart-wrapper-sm chart-wrapper-plans"><canvas id="plansBarChart"></canvas></div></div>
-              <div class="space-y-3 text-xs">
-                <div id="planCard1" onclick="selectPlanPreset('p1')" title="Показать p₁ на графиках" class="cursor-pointer p-3.5 rounded-xl border bg-emerald-50 border-emerald-300 font-bold text-emerald-900 shadow-xs">План p₁ (Оптимальный P₁⁰): Z = —</div>
-                <div id="planCard2" onclick="selectPlanPreset('p2')" title="Показать p₂ на графиках" class="cursor-pointer p-3.5 rounded-xl border bg-rose-50 border-rose-200 text-rose-900 shadow-xs">План p₂ (Нарушение X₇) — Z = —</div>
-                <div id="planCard3" onclick="selectPlanPreset('p3')" title="Показать p₃ на графиках" class="cursor-pointer p-3.5 rounded-xl border bg-slate-50 text-slate-700 shadow-xs">План p₃ (Альтернативный): Z = —</div>
-                <p class="text-[11px] text-slate-500 leading-snug">
-                  Нажмите на карточку плана, чтобы открыть его на вкладках «Прогноз» и «Радар».
-                  Справочно по статье: Z(p₁) = 1.6031, Z(p₃) = 1.8573. Δ — отклонение от статьи
-                  (положительное = хуже).
-                </p>
-              </div>
-            </div>
-            <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-[11px] leading-relaxed text-blue-950">
-              <b>Почему p₂ исключается:</b> у p₂ усилен положительный драйвер X₇ и ослаблена отрицательная
-              обратная связь, поэтому X₇ выходит за верхнюю границу и нарушает (3). Планы p₁ и p₃ остаются в коридоре;
-              сравниваются по Z — меньшему значению соответствует лучший план. В статье оптимум p₁ (Z = 1.6031).
-              Конкретные уравнения для p₂/p₃ в статье не приведены, поэтому это демонстрационные сценарии,
-              откалиброванные по Z(p₁) и Z(p₃).
-            </div>
           </div>
 
         </div>
@@ -411,20 +330,11 @@
           границы коридора.
         </div>
 
-        <div class="p-3.5 bg-blue-50 rounded-xl border border-blue-200 text-[11px] text-slate-600">
-          <b>Модельные планы.</b> p₁ — базовый набор мероприятий; p₂ — вариант с усиленным положительным драйвером
-          и ослабленной отрицательной обратной связью по X₇ (проверка ограничения (3)); p₃ — альтернативный план
-          с пониженной (≈46%) интенсивностью мероприятий. Значения Z(p) пересчитываются по (1) при каждом изменении
-          коэффициентов; калибровка по статье: Z(p₁) = 1.6031, Z(p₃) = 1.8573.
-        </div>
-
         <div class="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-950">
           <div class="font-bold text-xs mb-1">Что исправлено в расчётах и графиках</div>
           <ul class="list-disc pl-4 space-y-0.5">
             <li>Убран принудительный clamp внутри RK4: ограничение (3) проверяется после интегрирования, поэтому X₉ больше не «прилипает» к 1.00 и нарушения не маскируются. При этом введён физический предел Xᵢ ≥ 0: отрицательных значений показателей не бывает.</li>
             <li>Пустая сумма внешних факторов заменена на нейтральный множитель 1: восстановлена отрицательная обратная связь X₉ → X₂/X₃, которая раньше обнулялась.</li>
-            <li>План p₂ больше не сдвигает темп постоянным слагаемым (это могло менять знак производной); усиление/ослабление применяется к положительному и отрицательному членам.</li>
-            <li>После исправлений заново откалиброваны Xᵢⁿᵒʳᵐ = 19.05 и интенсивность p₃ = 0.464: Z(p₁) = 1.6031, Z(p₃) = 1.8573.</li>
             <li>Графики строятся по 129 точкам (интерполяция Эрмита), а не по 9 узлам; видны изгибы. На динамике показан коридор (3), на радаре — цель X*, границы и таблица отклонений.</li>
             <li>Статус «в допустимой области» отделён от близости к цели X*: это разные критерии, именно поэтому значения выше X* не являются ошибкой.</li>
           </ul>
@@ -443,7 +353,7 @@
     </div>
   </div>
 
-  <script src="script.js?v=20261109-13"></script>
+  <script src="script.js?v=20261109-14"></script>
 </body>
 </html>
 
