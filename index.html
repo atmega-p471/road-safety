@@ -9,7 +9,7 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Стили -->
-  <link rel="stylesheet" href="style.css?v=20261109-12">
+  <link rel="stylesheet" href="style.css?v=20261109-13">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- MathJax -->
@@ -80,7 +80,7 @@
               <option value="12">Уравнение dX₁₂/dt (f₆₅–f₆₈)</option>
               <option value="13">Уравнение dX₁₃/dt (f₆₉–f₇₆)</option>
             </select>
-            <button onclick="fillRandomCoeffs()" title="Случайный разброс ±4% вокруг калиброванных коэффициентов" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Случайно</button>
+            <button onclick="fillRandomCoeffs()" title="Случайные значения для всех 76 функций и 6 внешних факторов" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Случайно</button>
             <button onclick="applyNonlinearDemo()" title="Демо: изогнутые кривые за счёт коэффициентов f(x), в пределах 0…1" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Демо f(x)</button>
             <button onclick="applyInitialDemo()" title="Демо: изогнутые кривые за счёт начальных X(0), функции не меняются" class="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-lg transition shadow-xs">Демо X(0)</button>
             <button onclick="applySineDemo()" title="Демо: периодическое воздействие, кривые в стиле синусоид, 0…1" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-white text-xs font-semibold rounded-lg transition shadow-xs">Демо-синус</button>
@@ -443,7 +443,7 @@
     </div>
   </div>
 
-  <script src="script.js?v=20261109-12"></script>
+  <script src="script.js?v=20261109-13"></script>
 </body>
 </html>
 

@@ -624,31 +624,23 @@ function syncFuncInput(idx, key, value) {
   if (el && document.activeElement !== el) el.value = value;
 }
 
-function jitterCoeff(base, absSpread) {
-  const spread = Math.max(Math.abs(base) * 0.04, absSpread);
-  return +(base + (Math.random() * 2 - 1) * spread).toFixed(4);
-}
-
-// Случайный разброс ±4% вокруг калиброванных значений.
-// Полностью свободный генератор (как раньше) давал нефизические траектории:
-// показатели уходили в минус и в десятки. Небольшой разброс позволяет менять
-// коэффициенты, но сохраняет правдоподобный масштаб решения.
+// Свободный случайный разброс для всех 76 функций и 6 внешних факторов.
+// Возвращает исходное поведение кнопки «Случайно»: значения генерируются
+// заново в широких диапазонах, а не вокруг калиброванных коэффициентов.
 function fillRandomCoeffs() {
   demoNonlinear = false;
   sineDemo = false;
-  funcs76.forEach((f, i) => {
-    const d = DEFAULT_F76[i];
-    f.c0 = jitterCoeff(d.c0, 0.010);
-    f.c1 = jitterCoeff(d.c1, 0.010);
-    f.c2 = jitterCoeff(d.c2, 0.006);
-    f.c3 = jitterCoeff(d.c3, 0.003);
+  funcs76.forEach(f => {
+    f.c0 = +(Math.random() * 4 - 1.5).toFixed(2);
+    f.c1 = +(Math.random() * 6 - 3).toFixed(2);
+    f.c2 = +(Math.random() * 3 - 1.5).toFixed(2);
+    f.c3 = +(Math.random() * 1 - 0.5).toFixed(2);
   });
-  E_FACTORS.forEach((e, i) => {
-    const d = DEFAULT_E[i];
-    e.d0 = Math.max(0.05, jitterCoeff(d.d0, 0.010));
-    e.d1 = jitterCoeff(d.d1, 0.005);
-    e.d2 = jitterCoeff(d.d2, 0.002);
-    e.d3 = jitterCoeff(d.d3, 0.0005);
+  E_FACTORS.forEach(e => {
+    e.d0 = +(Math.random() * 1.5 + 0.3).toFixed(2);
+    e.d1 = +(Math.random() * 0.4 - 0.1).toFixed(2);
+    e.d2 = +(Math.random() * 0.04 - 0.02).toFixed(3);
+    e.d3 = +(Math.random() * 0.008 - 0.004).toFixed(4);
   });
   renderAllFormulasInline();
   renderRegressionEditor(true);
